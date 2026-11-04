@@ -4,6 +4,12 @@ import MarginMakerCore
 
 struct ContentView: View {
     @ObservedObject var model: AppModel
+    @StateObject private var dropHandler: PDFDropHandler
+
+    init(model: AppModel) {
+        self.model = model
+        _dropHandler = StateObject(wrappedValue: PDFDropHandler(model: model))
+    }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -11,12 +17,23 @@ struct ContentView: View {
             Divider()
             workspace
         }
+        .contentShape(Rectangle())
+        .onDrop(of: [.fileURL], delegate: PDFDropDelegate(handler: dropHandler))
+        .overlay {
+            if dropHandler.isTargeted {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.teal.opacity(0.04))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.teal.opacity(0.7), lineWidth: 2))
+                    .padding(5)
+                    .allowsHitTesting(false)
+            }
+        }
         .tint(.teal)
         .navigationTitle("Margin Maker")
         .toolbar {
             ToolbarItem(placement: .navigation) {
                 Button { model.choosePDF() } label: { Label("Open PDF…", systemImage: "folder") }
-                    .disabled(model.isBusy)
+                    .disabled(!model.canChoosePDF)
                     .help("Open a PDF (⌘O)")
             }
             ToolbarItem(placement: .principal) {
@@ -190,7 +207,13 @@ struct ContentView: View {
                 if model.isBusy || model.previewIsBusy {
                     VStack(spacing: 12) {
                         ProgressView().controlSize(.small)
-                        if model.isBusy { Text(model.activity).font(.caption) }
+                        if model.isBusy {
+                            Text(model.activity).font(.caption).lineLimit(2)
+                            if let queued = model.pendingOpenURL {
+                                Text("Next: \(queued.lastPathComponent)")
+                                    .font(.caption).lineLimit(1).truncationMode(.middle)
+                            }
+                        }
                     }
                     .padding(18).background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                 }
@@ -224,7 +247,7 @@ struct ContentView: View {
                 .font(.body).foregroundStyle(.secondary)
             Button("Open PDF…") { model.choosePDF() }
                 .buttonStyle(.borderedProminent).controlSize(.large)
-                .disabled(model.isBusy)
+                .disabled(!model.canChoosePDF)
             Text("Works offline · Selectable text stays selectable")
                 .font(.caption).foregroundStyle(.secondary)
         }
@@ -273,6 +296,7 @@ private struct PDFPreview: NSViewRepresentable {
         view.autoScales = true
         view.backgroundColor = .clear
         view.pageShadowsEnabled = true
+        disableNativeDrops(in: view)
         return view
     }
 
@@ -280,6 +304,14 @@ private struct PDFPreview: NSViewRepresentable {
         if view.document !== document {
             view.document = document
             view.autoScales = true
+            // PDFKit must not independently replace its preview document on drop.
+            // The enclosing window routes every file through the protected importer.
+            disableNativeDrops(in: view)
         }
+    }
+
+    private func disableNativeDrops(in view: NSView) {
+        view.unregisterDraggedTypes()
+        for child in view.subviews { disableNativeDrops(in: child) }
     }
 }

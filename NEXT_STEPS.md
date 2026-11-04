@@ -33,15 +33,16 @@ use, not a Developer ID signed or notarized public release.
 
 ## First preserve the baseline
 
-The baseline and its tag now exist in Git. Main contains the focused source-file
-protection fix. `feature/page-orientation` is a separate QA candidate replacing
-document rotation with Portrait/Landscape output canvases; it is not merged or
-installed. The accepted behavior above describes the historical v0.2.0 baseline.
+The baseline and its tag exist in Git. Main contains the source-file protection
+fix and the reviewed Portrait/Landscape output canvases (`30fdedf`). The separate
+`feature/reliability-and-drag-drop` candidate adds two async reliability fixes
+and single-PDF drag-and-drop; it awaits user QA and must not be merged yet.
+The accepted behavior above describes the historical installed v0.2.0 baseline.
 
-- [ ] Initialize local Git history and commit the accepted source and project
-  documentation. This folder is not currently a Git repository.
-- [ ] Tag the baseline as `v0.2.0` and retain a versioned copy of the working
-  ZIP with its checksum. Keep generated caches and personal PDFs out of Git.
+- [x] Initialize local Git history and commit the accepted source and project
+  documentation.
+- [x] Tag the baseline as `v0.2.0` and identify the preserved working ZIP by its
+  checksum. Keep generated caches and personal PDFs out of Git.
 - [ ] Choose whether and where to host the source later. Public hosting is a
   separate decision from making a local checkpoint.
 
@@ -58,8 +59,8 @@ the app's runtime. These are audit topics, not confirmed defects:
   enlargement, unusual dimensions, all anchors, and composed rotation.
 - [ ] Review source-file protection, destination aliases, atomic writes,
   permissions failures, and interrupted or failed exports.
-- [ ] Review asynchronous loading, stale preview cancellation, rapid slider
-  and rotation changes, and opening another document during ongoing work.
+- [ ] User-test the serialized preview worker, latest-open queue, and physical
+  Finder drops on `feature/reliability-and-drag-drop`; automated regressions pass.
 - [ ] Measure responsiveness and peak memory with a long reading and a large
   scanned PDF. Add progress/cancellation controls only if that testing shows
   a practical need.
@@ -135,11 +136,10 @@ and may change after the audit. Choose one at a time based on actual use.
 
 | Candidate | Benefit | Relative effort | Scope to preserve |
 | --- | --- | --- | --- |
-| Drag and drop a PDF | Quicker import | Small | Keep Open PDF and the existing workflow. |
 | A small set of saved layouts | Reuse a favorite scale and position | Small to moderate | Keep 75% middle-center as the default unless the user explicitly chooses another layout. |
 | Rotate an individual page | Fix a reading with one sideways page | Moderate | Define how page rotation composes with document rotation and the scope control first. |
 | Apply a layout to a page range | Configure sections of longer readings | Moderate | Preserve All pages and This page as the main interaction. |
-| A4 output | Support another annotation workflow | Moderate | Letter Portrait/Landscape is implemented on the feature branch; keep Portrait as the default. |
+| A4 output | Support another annotation workflow | Moderate | Letter Portrait/Landscape is on main; keep Portrait as the default. |
 | Optional automatic content trimming | Reclaim excessive whitespace | Larger | Keep it opt-in and previewable; preserve text and avoid clipping reading content. |
 
 Annotation editing, OCR, AI, batch processing, syncing, accounts, subscriptions,

@@ -89,6 +89,8 @@ public enum PDFExporter {
                                       [kCGPDFContextCreator: "Margin Maker"] as CFDictionary) else {
             throw PDFError.exportFailed
         }
+        var contextIsClosed = false
+        defer { if !contextIsClosed { context.closePDF() } }
         for index in indices {
             try Task.checkCancellation()
             guard let page = document.page(at: index + 1) else { throw PDFError.invalidPage }
@@ -112,8 +114,11 @@ public enum PDFExporter {
             context.drawPDFPage(page)
             context.restoreGState()
             context.endPDFPage()
+            try Task.checkCancellation()
         }
         context.closePDF()
+        contextIsClosed = true
+        try Task.checkCancellation()
         guard output.length > 0 else { throw PDFError.exportFailed }
         return output as Data
     }

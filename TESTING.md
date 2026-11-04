@@ -24,6 +24,11 @@ The native suite verifies:
   retargeted import symlinks, unlinked hard links, and Finder aliases.
 - Destination changes after staging, pinned destination-directory replacement,
   cleanup after rejected/failed replacement, and failed staging without data loss.
+- Serialized/coalesced previews, cancellation before and during single-page
+  drawing, revision/error guards, queued imports during import/export, and
+  recovery without losing the current document or a failed-export message.
+- Finder file-URL representations, PDF candidate hover/exit state, drop ordering,
+  protected import after drops, invalid providers, unsupported files, and aliases.
 - Adding a highlight annotation and reopening the exported PDF with PDFKit.
 
 ## Manual Mac smoke test
@@ -212,3 +217,75 @@ and working ZIP retain their prior SHA-256 hashes; the installed/running app was
 not replaced or closed. PDF Expert, macOS 13, and Intel hardware remain
 unverified. Existing source annotations/links/forms are still not migrated,
 and this change does not auto-correct readings that are already sideways.
+
+### Reliability and drag-and-drop QA
+
+Stage 1 reviewed `30fdedf` against main without significant findings and
+fast-forward merged it. Main therefore contains both source protection
+(`78e19c8`) and Portrait/Landscape output. Stage 2 is isolated on
+`feature/reliability-and-drag-drop` and must remain unmerged pending user QA.
+
+- Complete native suite: **48 passed in debug and 48 passed in release** on
+  this Apple Silicon Mac. All 28 prior tests still pass, alongside 20 new
+  application-state, drop-provider, and cancellation tests.
+- Controlled detached workers prove maximum preview concurrency of one,
+  replacement of intermediate pending settings by the latest request, continued
+  main-actor control changes, and suppression of stale results and errors even
+  when an old worker ignores cancellation.
+- A complex single-page PDF tests in-flight cancellation after drawing. Already
+  cancelled work also fails without returning a PDF. The PDF context is closed
+  on cancellation/errors, and cancellation is checked after finalization too.
+- Controlled imports/exports verify latest pending URL wins, intermediate opens
+  are skipped, superseded imports cannot replace the current document, failed
+  new imports preserve source/settings/preview, and queued imports do not hide
+  an export failure. Queued and dropped imports retain original-file identity
+  protection after renames.
+- Drop tests exercise actual NSItemProvider URL, data, and string representations;
+  a single PDF candidate's hover/exit state; late hover/provider completions;
+  drops queued during export; invalid/remote providers; corrupt PDFs; multiple
+  files; folders; unsupported types; symlinks; and Finder aliases. PDF bytes are
+  loaded from the original URL by the shared protected importer, not copied
+  from a temporary provider representation.
+- Headless AppModel benchmark on the 300,000-rectangle audit fixture: one update
+  settled in about **0.71 seconds**. Eight changes over **0.67 seconds** settled
+  in **1.40 seconds**, using **1.22 CPU seconds**. Main-actor update gaps stayed
+  at or below **0.086 seconds**. This measures conversion/state responsiveness,
+  not full PDFView display latency or a guarantee for arbitrary PDFs.
+- The separately named optimized QA app launches, opens the synthetic reading
+  through the native picker, responds to a native slider drag, and saves both
+  Portrait and Landscape documents through the save panel at 75% middle-right.
+  Independent pypdf/qpdf checks confirm four pages, correct Letter dimensions,
+  source order, searchable vector text, no residual output rotation, and no
+  added raster images. Rendered pages were inspected for upright placement.
+- PDFKit adds a highlight to selected text and an ink stroke in the margin,
+  then saves/reopens both output orientations with both annotations and text
+  intact. This supports the post-export annotation workflow but does not
+  substitute for testing PDF Expert itself.
+
+The QA candidate is named **Margin Maker Reliability QA**, with bundle ID
+`local.marginmaker.reliabilityqa`. Its archive is
+`build/qa-reliability-and-drag-drop/Margin Maker Reliability QA.zip`.
+The local QA app is under `/private/tmp/margin-maker-reliability-drag-drop/qa-final`.
+Builds, test logs, benchmark output, generated fixtures, and GUI exports are
+under `/private/tmp/margin-maker-reliability-drag-drop`. It is ad-hoc signed for
+local testing; extract outside iCloud before launching or installing alongside
+the accepted application.
+
+Remaining manual checks:
+
+- **Physical Finder drag/drop and its visible hover border remain unverified.**
+  The automation did not initiate a file drag, including in a Finder-to-Finder
+  control test with disposable files. The provider/queue tests above pass,
+  but do not establish end-to-end physical dragging. Test one PDF over the
+  empty workspace, sidebar, and existing PDF preview; also try an unsupported
+  file and a multiple-file drop.
+- PDF Expert's highlight/write/save/reopen workflow, macOS 13, and Intel hardware
+  remain unverified. The old annotation/link/form migration limitations and
+  the source-identity cross-volume/final-rename race limits remain unchanged.
+- An in-progress Core Graphics page draw cannot be interrupted midway. The
+  pending preview waits for that worker to finish before starting the latest
+  request. A large import/export similarly completes before a pending open.
+
+The v0.2.0 tag is preserved. Existing working app executables and ZIPs were
+hashed before Stage 1 and verified unchanged. The installed/running app was
+not modified or closed. Stage 2 is not merged, pushed, published, or distributed.

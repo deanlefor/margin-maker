@@ -17,7 +17,7 @@ struct MarginMakerApp: App {
             CommandGroup(replacing: .newItem) {
                 Button("Open PDF…") { model.choosePDF() }
                     .keyboardShortcut("o")
-                    .disabled(model.isBusy)
+                    .disabled(!model.canChoosePDF)
                 Button("Export PDF…") { model.chooseExport() }
                     .keyboardShortcut("e", modifiers: [.command, .shift])
                     .disabled(!model.canExport)

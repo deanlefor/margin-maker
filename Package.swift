@@ -11,6 +11,6 @@ let package = Package(
     targets: [
         .target(name: "MarginMakerCore"),
         .executableTarget(name: "MarginMaker", dependencies: ["MarginMakerCore"]),
-        .testTarget(name: "MarginMakerCoreTests", dependencies: ["MarginMakerCore"])
+        .testTarget(name: "MarginMakerCoreTests", dependencies: ["MarginMakerCore", "MarginMaker"])
     ]
 )

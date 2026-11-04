@@ -11,13 +11,14 @@ milestones are a code audit, real PDF Expert and compatibility checks, and
 release packaging. See [NEXT_STEPS.md](NEXT_STEPS.md) for the prioritized
 roadmap and [CODEX_TASK.md](CODEX_TASK.md) for the development handoff.
 
-**Feature branch:** `feature/page-orientation` replaces document rotation with
-a document-wide Portrait/Landscape output canvas. The accepted installed app
-and `v0.2.0` tag remain unchanged.
+Main now includes original-file protection and Portrait/Landscape output.
+**Feature branch:** `feature/reliability-and-drag-drop` adds serialized previews,
+queued file opens, and PDF drag-and-drop. It is a separate QA candidate; the
+accepted installed app, existing ZIPs, and `v0.2.0` tag remain unchanged.
 
 ## The interaction
 
-1. Open a reading (PDF).
+1. Open a reading (PDF), or drag one PDF from Finder onto the application area.
 2. See its page on a white US Letter canvas; choose Portrait or Landscape.
 3. Set its size with a **50–100% slider** (75% by default).
 4. Position the reading with **nine buttons** (top/middle/bottom × left/center/right).
@@ -61,6 +62,16 @@ box, respecting the PDF's existing orientation, is proportionally fitted inside
 the chosen Letter canvas. Lower percentages
 scale that fitted size; pages are never stretched or automatically trimmed.
 
+You can also drop one PDF anywhere in the main application area, including
+the preview and controls. A subtle border marks a PDF candidate under the
+pointer. Folders, multiple files, and unsupported file types are rejected with
+feedback; the importer checks PDF validity and password protection on opening.
+
+If another import or export is running, the latest open request is retained
+and processed when safe. Its filename appears as **Next** during the busy
+operation. Picker, Finder, and drop requests share the protected importer.
+An unsuccessful new import keeps the current reading and its page settings.
+
 Keep **All pages** selected to adjust the whole reading, or choose **This
 page** and use the arrows (Command-[ / Command-]) for individual settings.
 Changing scope alone preserves existing settings. The next adjustment in All
@@ -97,7 +108,9 @@ highlight annotations, input errors, and original-file protection. See
 
 `Sources/MarginMaker` contains the native UI, file panels, and PDFKit preview.
 Loading, preview generation, and export run off the UI thread. Preview
-requests are debounced and stale requests are cancelled.
+requests are debounced and coalesced to the latest settings. Only one preview
+conversion runs at a time; a cancelled drawing finishes before its replacement
+starts, and revision checks prevent stale results from appearing.
 `Sources/MarginMakerCore` contains the independent, tested layout and vector
 PDF engine. Source bytes are held in an immutable snapshot.
 
