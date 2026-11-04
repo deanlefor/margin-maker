@@ -33,10 +33,10 @@ use, not a Developer ID signed or notarized public release.
 
 ## First preserve the baseline
 
-The baseline and its tag exist in Git. Main contains the source-file protection
-fix and the reviewed Portrait/Landscape output canvases (`30fdedf`). The separate
-`feature/reliability-and-drag-drop` candidate adds two async reliability fixes
-and single-PDF drag-and-drop; it awaits user QA and must not be merged yet.
+The baseline and its tag exist in Git. Main contains source-file protection,
+Portrait/Landscape output, the two async reliability fixes, and single-PDF
+drag-and-drop (`8dc8769`). The separate `feature/app-icon` branch integrates the
+approved Concept C icon and awaits user QA; it must not be merged yet.
 The accepted behavior above describes the historical installed v0.2.0 baseline.
 
 - [x] Initialize local Git history and commit the accepted source and project
@@ -60,7 +60,7 @@ the app's runtime. These are audit topics, not confirmed defects:
 - [ ] Review source-file protection, destination aliases, atomic writes,
   permissions failures, and interrupted or failed exports.
 - [ ] User-test the serialized preview worker, latest-open queue, and physical
-  Finder drops on `feature/reliability-and-drag-drop`; automated regressions pass.
+  Finder drops now on main; automated regressions pass.
 - [ ] Measure responsiveness and peak memory with a long reading and a large
   scanned PDF. Add progress/cancellation controls only if that testing shows
   a practical need.

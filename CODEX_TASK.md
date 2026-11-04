@@ -9,11 +9,11 @@ complete. Future work should preserve that workflow.
 
 ## Current application
 
-Main is at `30fdedf`, with the source-protection fix (`78e19c8`) and the reviewed
-Portrait/Landscape feature fast-forward merged. The current feature branch is
-`feature/reliability-and-drag-drop`. It is a separate QA candidate and must not
-be merged until the user has tested it. The installed v0.2.0 app, existing ZIPs,
-and baseline tag remain protected.
+Main is at `8dc8769`, with source protection, Portrait/Landscape, serialized
+previews, queued imports, and PDF drag-and-drop reviewed and fast-forward merged.
+The current branch is `feature/app-icon`, integrating only the approved Concept C
+artwork and packaging. It must remain unmerged pending user QA. The installed
+v0.2.0 app, existing ZIPs, and baseline tag remain protected.
 
 The native Mac app already exists. It uses SwiftUI, PDFKit, and Core Graphics,
 has no third-party runtime dependencies, and runs entirely offline.
@@ -47,6 +47,8 @@ has no third-party runtime dependencies, and runs entirely offline.
 - `tests/MarginMakerCoreTests`: PDF engine, file protection, application-state,
   cancellation, and drop-provider Swift Testing regressions.
 - `Packaging/Info.plist` and `scripts/build-app.sh`: local app packaging.
+- `Packaging/AppIcon` and `scripts/build-icon.sh`: unchanged approved transparent
+  artwork and native macOS icon generation before app signing.
 - `margin_maker/core.py` and `tests/test_core.py`: Python reference only;
   they are not bundled with the Mac app.
 
@@ -58,7 +60,7 @@ bash scripts/build-app.sh release /private/tmp/margin-maker-local-build
 
 The build produces `Margin Maker.app` and `Margin Maker.zip` in the chosen
 output directory, signed ad-hoc for local use. The default directory is `build`;
-use a fresh output directory to preserve existing artifacts. Extract the ZIP
+existing apps/ZIPs are refused. Use a fresh output directory. Extract the ZIP
 outside iCloud before installing.
 The build stages signing outside synced folders to avoid Finder metadata
 invalidating the bundle. `README.md` has full run instructions.
@@ -88,9 +90,10 @@ Mac, and public distribution are still future work.
 
 When asked to resume development without a different priority:
 
-1. Let the user test the separately named Reliability QA app, especially actual
-   Finder drops over the empty state, sidebar, and existing PDF preview.
-2. Review the feature branch against main. Merge only after explicit approval;
+1. Let the user inspect the separately named Icon QA app, particularly the Dock
+   icon at normal and magnified sizes. Finder list/icon views and QA launch were
+   verified; direct Dock inspection timed out. See the icon run in `TESTING.md`.
+2. Review `feature/app-icon` against main. Merge only after explicit approval;
    preserve all existing ZIPs, installed apps, and the v0.2.0 tag.
 3. Complete the real PDF Expert workflow and promised macOS/hardware checks.
 4. For further changes, use generated PDFs and a new QA output path so the

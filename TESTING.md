@@ -289,3 +289,49 @@ Remaining manual checks:
 The v0.2.0 tag is preserved. Existing working app executables and ZIPs were
 hashed before Stage 1 and verified unchanged. The installed/running app was
 not modified or closed. Stage 2 is not merged, pushed, published, or distributed.
+
+### Concept C application icon QA: November 4, 2026
+
+The reliability branch was subsequently reviewed and fast-forward merged into
+main at `8dc8769`. The icon work starts there on `feature/app-icon` and remains
+unmerged pending user inspection. Changes are limited to the approved artwork,
+icon generation, bundle metadata, packaging, and related documentation. Native
+application/PDF code, controls, document associations, and test sources are
+unchanged from main.
+
+- Complete native suite: **48 passed in debug and 48 passed in release**.
+  The existing tests cover source protection, preview scheduling, queued/dropped
+  imports, both Letter orientations, scaling/positioning/crops, selectable text,
+  and highlight/ink save-and-reopen. The Python reference suite also passes
+  **all eight tests**.
+- The retained 1254 × 1254 RGBA master is byte-identical to the approved
+  transparent handoff image. `Packaging/AppIcon/README.md` records its checksum
+  and origin. The opaque reference preview is not embedded in the app.
+- Native `sips`/`iconutil` generate all ten standard 1×/2× icon representations.
+  Decoding the bundled `.icns` back to an iconset verifies every expected
+  dimension, preserved alpha masks, and alpha zero at all four outer corners
+  at every size. Full-resolution and small-size renders were inspected.
+- `CFBundleIconFile` identifies the embedded `Contents/Resources/AppIcon.icns`.
+  The icon is included before ad-hoc signing; bundle and fresh ZIP extraction
+  verification use `codesign --verify --strict`.
+- Packaging checks reject existing apps/ZIPs without changing them and reject
+  an incomplete QA name/identifier override. The regular identity is retained
+  by default; the QA build uses **Margin Maker Icon QA** and the distinct bundle
+  identifier `local.marginmaker.iconqa`.
+- The QA app launches successfully. Finder list and icon views display the
+  approved icon with transparent outside corners. Direct Dock inspection timed
+  out, so its appearance in the actual Dock remains a manual check: launch the
+  extracted QA app and inspect it at normal and magnified Dock sizes. No Dock
+  settings were changed.
+
+The QA archive is `build/qa-app-icon/Margin Maker Icon QA.zip`. Extract outside
+iCloud before launching or installing alongside the working application. This
+is an ad-hoc local QA build, not a notarized distribution. The local app, test
+logs, decoded iconsets, packaging checks, and verification records are under
+`/private/tmp/margin-maker-icon-stwy1_z6`.
+
+Main and the v0.2.0 tag remain unchanged. Pre-existing working app bundle files,
+all existing project ZIPs, and the supplied handoff ZIP were hashed before work
+and checked again afterward. No installed app is replaced, and nothing is
+merged, pushed, published, notarized, or distributed. The earlier PDF Expert,
+physical Finder dragging, macOS 13, and Intel QA limitations remain unchanged.

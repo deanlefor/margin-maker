@@ -11,10 +11,10 @@ milestones are a code audit, real PDF Expert and compatibility checks, and
 release packaging. See [NEXT_STEPS.md](NEXT_STEPS.md) for the prioritized
 roadmap and [CODEX_TASK.md](CODEX_TASK.md) for the development handoff.
 
-Main now includes original-file protection and Portrait/Landscape output.
-**Feature branch:** `feature/reliability-and-drag-drop` adds serialized previews,
-queued file opens, and PDF drag-and-drop. It is a separate QA candidate; the
-accepted installed app, existing ZIPs, and `v0.2.0` tag remain unchanged.
+Main includes original-file protection, Portrait/Landscape output, serialized
+previews, queued file opens, and PDF drag-and-drop (`8dc8769`).
+**Feature branch:** `feature/app-icon` integrates the approved Concept C icon.
+The accepted installed app, existing ZIPs, and `v0.2.0` tag remain unchanged.
 
 ## The interaction
 
@@ -53,6 +53,22 @@ You can instead choose a local output directory:
 ```bash
 bash scripts/build-app.sh release /private/tmp/margin-maker-build
 ```
+
+Builds refuse to replace an existing app or ZIP; choose a fresh output directory.
+The approved transparent icon master is retained under `Packaging/AppIcon`.
+macOS `sips` and `iconutil` generate the icon before bundle signing; see that
+directory's README for provenance and reproducibility details.
+
+To create the separately named icon QA app without changing regular app metadata:
+
+```bash
+MARGIN_MAKER_APP_NAME="Margin Maker Icon QA" \
+MARGIN_MAKER_BUNDLE_ID="local.marginmaker.iconqa" \
+bash scripts/build-app.sh release /private/tmp/margin-maker-icon-qa
+```
+
+Both overrides are required together. The output is `Margin Maker Icon QA.app`
+and `Margin Maker Icon QA.zip`; this does not install or replace an application.
 
 ## Using the app
 
