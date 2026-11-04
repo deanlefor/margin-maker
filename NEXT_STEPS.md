@@ -33,6 +33,11 @@ use, not a Developer ID signed or notarized public release.
 
 ## First preserve the baseline
 
+The baseline and its tag now exist in Git. Main contains the focused source-file
+protection fix. `feature/page-orientation` is a separate QA candidate replacing
+document rotation with Portrait/Landscape output canvases; it is not merged or
+installed. The accepted behavior above describes the historical v0.2.0 baseline.
+
 - [ ] Initialize local Git history and commit the accepted source and project
   documentation. This folder is not currently a Git repository.
 - [ ] Tag the baseline as `v0.2.0` and retain a versioned copy of the working
@@ -134,7 +139,7 @@ and may change after the audit. Choose one at a time based on actual use.
 | A small set of saved layouts | Reuse a favorite scale and position | Small to moderate | Keep 75% middle-center as the default unless the user explicitly chooses another layout. |
 | Rotate an individual page | Fix a reading with one sideways page | Moderate | Define how page rotation composes with document rotation and the scope control first. |
 | Apply a layout to a page range | Configure sections of longer readings | Moderate | Preserve All pages and This page as the main interaction. |
-| Landscape Letter or A4 output | Support another annotation workflow | Moderate | Add explicit output-size tests; retain portrait Letter as the default. |
+| A4 output | Support another annotation workflow | Moderate | Letter Portrait/Landscape is implemented on the feature branch; keep Portrait as the default. |
 | Optional automatic content trimming | Reclaim excessive whitespace | Larger | Keep it opt-in and previewable; preserve text and avoid clipping reading content. |
 
 Annotation editing, OCR, AI, batch processing, syncing, accounts, subscriptions,

@@ -147,25 +147,33 @@ struct ContentView: View {
 
     private var workspace: some View {
         VStack(spacing: 0) {
-            HStack {
-                Label("US Letter", systemImage: "doc")
-                Text("8.5 × 11 in").foregroundStyle(.tertiary)
-                Spacer()
-                if model.settings?.hasCustomPages == true {
-                    Text("Individual page settings").foregroundStyle(.secondary)
+            HStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Label("US Letter", systemImage: "doc")
+                        Text(model.pageOrientation == .portrait ? "8.5 × 11 in" : "11 × 8.5 in")
+                            .foregroundStyle(.tertiary)
+                    }
+                    if model.settings?.hasCustomPages == true {
+                        Text("Individual page settings").foregroundStyle(.secondary)
+                    }
                 }
-                Button {
-                    model.rotateDocument()
-                } label: {
-                    Label("Rotate document", systemImage: "rotate.right")
+                Spacer(minLength: 8)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Page Orientation").fontWeight(.medium)
+                    Picker(selection: Binding(get: { model.pageOrientation },
+                                              set: { model.setPageOrientation($0) })) {
+                        ForEach(PageOrientation.allCases, id: \.self) { orientation in
+                            Text(orientation.rawValue).tag(orientation)
+                        }
+                    } label: { EmptyView() }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .accessibilityLabel("Page Orientation")
+                    .disabled(model.source == nil || model.isBusy)
+                    .help("Changes the canvas for every page. Readings keep their imported orientation.")
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-                .foregroundStyle(.primary)
-                .disabled(model.source == nil || model.isBusy)
-                .help("Rotate every source page 90° clockwise. Four clicks restore the original orientation. Current rotation: \(model.documentRotation.rawValue)°.")
-                .accessibilityLabel("Rotate document clockwise")
-                .accessibilityValue("\(model.documentRotation.rawValue) degrees clockwise")
+                .frame(width: 196)
             }
             .font(.caption).foregroundStyle(.secondary)
             .padding(.horizontal, 24).padding(.vertical, 15)

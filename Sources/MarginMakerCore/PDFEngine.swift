@@ -74,7 +74,7 @@ public enum PDFExporter {
     /// Draw original PDF operators into a new PDF context. Never makes a bitmap.
     /// Existing annotations, links, and form widgets are not migrated.
     public static func export(source: PDFSource, layouts: [PageLayout],
-                              rotation: DocumentRotation = .original,
+                              orientation: PageOrientation = .portrait,
                               pageIndices: [Int]? = nil) throws -> Data {
         guard layouts.count == source.pageCount else { throw PDFError.layoutCount }
         let indices = pageIndices ?? Array(0..<source.pageCount)
@@ -83,7 +83,7 @@ public enum PDFExporter {
         }
         let document = try PDFSource.open(source.data)
         let output = NSMutableData()
-        var mediaBox = CGRect(origin: .zero, size: PageLayout.letter)
+        var mediaBox = CGRect(origin: .zero, size: orientation.pageSize)
         guard let consumer = CGDataConsumer(data: output),
               let context = CGContext(consumer: consumer, mediaBox: &mediaBox,
                                       [kCGPDFContextCreator: "Margin Maker"] as CFDictionary) else {
@@ -92,8 +92,8 @@ public enum PDFExporter {
         for index in indices {
             try Task.checkCancellation()
             guard let page = document.page(at: index + 1) else { throw PDFError.invalidPage }
-            let visibleSize = rotation.rotatedSize(for: source.visiblePageSizes[index])
-            let destination = try layouts[index].placement(for: visibleSize)
+            let visibleSize = source.visiblePageSizes[index]
+            let destination = try layouts[index].placement(for: visibleSize, orientation: orientation)
             context.beginPDFPage(nil)
             context.setFillColor(CGColor(gray: 1, alpha: 1))
             context.fill(mediaBox)
@@ -107,7 +107,7 @@ public enum PDFExporter {
             // page at its original size, then apply our proportional fit explicitly.
             context.concatenate(page.getDrawingTransform(.cropBox,
                                                          rect: CGRect(origin: .zero, size: visibleSize),
-                                                         rotate: Int32(rotation.rawValue),
+                                                         rotate: 0,
                                                          preserveAspectRatio: true))
             context.drawPDFPage(page)
             context.restoreGState()

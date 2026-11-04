@@ -26,7 +26,7 @@ final class AppModel: ObservableObject {
     }
     var layout: PageLayout { settings?.current ?? PageLayout() }
     var scope: EditScope { settings?.scope ?? .allPages }
-    var documentRotation: DocumentRotation { settings?.rotation ?? .original }
+    var pageOrientation: PageOrientation { settings?.orientation ?? .portrait }
 
     func choosePDF() {
         guard !isBusy else { return }
@@ -69,9 +69,9 @@ final class AppModel: ObservableObject {
 
     func setScope(_ scope: EditScope) { settings?.scope = scope }
 
-    func rotateDocument() {
-        guard source != nil, !isBusy else { return }
-        settings?.rotateClockwise()
+    func setPageOrientation(_ orientation: PageOrientation) {
+        guard source != nil, !isBusy, orientation != pageOrientation else { return }
+        settings?.setOrientation(orientation)
         exportedURL = nil
         refreshPreview()
     }
@@ -113,7 +113,7 @@ final class AppModel: ObservableObject {
                 try await Task.sleep(for: .milliseconds(65))
                 let worker = Task.detached(priority: .userInitiated) {
                     try PDFExporter.export(source: source, layouts: settings.pages,
-                                           rotation: settings.rotation,
+                                           orientation: settings.orientation,
                                            pageIndices: [settings.pageIndex])
                 }
                 let data = try await withTaskCancellationHandler {
@@ -161,7 +161,7 @@ final class AppModel: ObservableObject {
                 try await Task.detached(priority: .userInitiated) {
                     try PDFExporter.validateDestination(destination, protecting: protection)
                     let data = try PDFExporter.export(source: source, layouts: settings.pages,
-                                                      rotation: settings.rotation)
+                                                      orientation: settings.orientation)
                     try PDFExporter.write(data, to: destination, protecting: protection)
                 }.value
                 exportedURL = destination

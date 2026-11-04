@@ -27,18 +27,19 @@ public struct PageLayout: Equatable, Sendable {
     }
 
     /// PDF coordinates have their origin at the bottom left. Size is the visible,
-    /// rotated crop box; 100% is always the largest proportional fit on Letter.
-    public func placement(for visibleSize: CGSize) throws -> CGRect {
+    /// rotated crop box; 100% is the largest proportional fit on the chosen canvas.
+    public func placement(for visibleSize: CGSize, orientation: PageOrientation = .portrait) throws -> CGRect {
         guard (50...100).contains(scalePercent) else { throw PDFError.invalidScale }
         guard visibleSize.width.isFinite, visibleSize.height.isFinite,
               visibleSize.width > 0, visibleSize.height > 0 else {
             throw PDFError.invalidPage
         }
-        let factor = min(Self.letter.width / visibleSize.width,
-                         Self.letter.height / visibleSize.height) * Double(scalePercent) / 100
+        let canvas = orientation.pageSize
+        let factor = min(canvas.width / visibleSize.width,
+                         canvas.height / visibleSize.height) * Double(scalePercent) / 100
         let size = CGSize(width: visibleSize.width * factor, height: visibleSize.height * factor)
-        let x = (Self.letter.width - size.width) * Double(horizontal.rawValue) / 2
-        let y = (Self.letter.height - size.height) * Double(2 - vertical.rawValue) / 2
+        let x = (canvas.width - size.width) * Double(horizontal.rawValue) / 2
+        let y = (canvas.height - size.height) * Double(2 - vertical.rawValue) / 2
         return CGRect(origin: CGPoint(x: x, y: y), size: size)
     }
 }
@@ -48,20 +49,16 @@ public enum EditScope: String, CaseIterable, Sendable {
     case currentPage = "This page"
 }
 
-/// Additional clockwise rotation of the entire reading, before fitting on Letter.
-/// The source PDF's own page rotation is preserved and composed with this value.
-public enum DocumentRotation: Int, CaseIterable, Sendable {
-    case original = 0
-    case clockwise90 = 90
-    case clockwise180 = 180
-    case clockwise270 = 270
+/// Output canvas orientation, independent of the imported reading's orientation.
+public enum PageOrientation: String, CaseIterable, Sendable {
+    case portrait = "Portrait"
+    case landscape = "Landscape"
 
-    public var nextClockwise: Self {
-        Self(rawValue: (rawValue + 90) % 360)!
-    }
-
-    public func rotatedSize(for size: CGSize) -> CGSize {
-        rawValue % 180 == 0 ? size : CGSize(width: size.height, height: size.width)
+    public var pageSize: CGSize {
+        switch self {
+        case .portrait: PageLayout.letter
+        case .landscape: CGSize(width: 792, height: 612)
+        }
     }
 }
 
@@ -69,7 +66,7 @@ public enum DocumentRotation: Int, CaseIterable, Sendable {
 public struct DocumentLayout: Sendable {
     public private(set) var pages: [PageLayout]
     public private(set) var pageIndex = 0
-    public private(set) var rotation: DocumentRotation = .original
+    public private(set) var orientation: PageOrientation = .portrait
     public var scope: EditScope = .allPages
     public var current: PageLayout { pages[pageIndex] }
     public var hasCustomPages: Bool { pages.contains { $0 != pages[0] } }
@@ -92,8 +89,8 @@ public struct DocumentLayout: Sendable {
         }
     }
 
-    /// Rotation always affects the whole reading, independent of the layout scope.
-    public mutating func rotateClockwise() {
-        rotation = rotation.nextClockwise
+    /// Canvas orientation applies to every page without changing individual layouts.
+    public mutating func setOrientation(_ orientation: PageOrientation) {
+        self.orientation = orientation
     }
 }

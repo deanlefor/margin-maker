@@ -9,6 +9,11 @@ complete. Future work should preserve that workflow.
 
 ## Current application
 
+The current feature branch is `feature/page-orientation`, starting from main's
+source-protection fix (`78e19c8`). It replaces the rotation control with two
+output canvas orientations. The installed `v0.2.0` app remains the accepted
+baseline; this branch is a separate QA candidate.
+
 The native Mac app already exists. It uses SwiftUI, PDFKit, and Core Graphics,
 has no third-party runtime dependencies, and runs entirely offline.
 
@@ -16,8 +21,10 @@ has no third-party runtime dependencies, and runs entirely offline.
 - Nine positioning buttons, scale slider, page navigation, and All pages /
   This page scope. Existing individual settings survive a scope change until
   another adjustment is made.
-- Rotate document turns all source pages 90 degrees clockwise per click,
-  independent of layout scope. Four clicks restore the original orientation.
+- Page Orientation selects Portrait (612 × 792 pt, default) or Landscape
+  (792 × 612 pt) for the whole document, independent of layout scope. It changes
+  the canvas and keeps the imported reading's existing orientation. Individual
+  page positions and scales survive switching orientations.
 - Preview and export share the vector PDF engine. The source file is never
   edited, and exports cannot replace it through path aliases.
 - Long toolbar filenames truncate inside their capsule. The scope heading is
@@ -45,10 +52,11 @@ invalidating the bundle. `README.md` has full run instructions.
 
 ## Recorded validation and remaining gaps
 
-The latest run passed 18 native tests in debug and release and eight Python
-reference tests. The Mac interface and generated PDFs were checked locally,
-including combined rotation, crops, source protection, selectable/searchable
-text, and preview/export agreement. See `TESTING.md` for the evidence.
+The Page Orientation feature run passed 28 native tests in debug and release.
+The separate QA app was checked locally in Portrait and Landscape, including
+per-page overrides, save-panel exports, source rotations/crops, selectable text,
+and preview/export agreement. The Python reference is unchanged; its previous
+eight-test result belongs to the baseline. See `TESTING.md` for the evidence.
 
 PDF Expert's own open/highlight/write/save/reopen workflow remains unverified.
 Physical testing covers this Apple Silicon Mac on macOS 27.0.1; the declared

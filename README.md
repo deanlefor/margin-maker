@@ -11,16 +11,19 @@ milestones are a code audit, real PDF Expert and compatibility checks, and
 release packaging. See [NEXT_STEPS.md](NEXT_STEPS.md) for the prioritized
 roadmap and [CODEX_TASK.md](CODEX_TASK.md) for the development handoff.
 
+**Feature branch:** `feature/page-orientation` replaces document rotation with
+a document-wide Portrait/Landscape output canvas. The accepted installed app
+and `v0.2.0` tag remain unchanged.
+
 ## The interaction
 
 1. Open a reading (PDF).
-2. See its page on a white US Letter (8.5 x 11-inch) canvas.
+2. See its page on a white US Letter canvas; choose Portrait or Landscape.
 3. Set its size with a **50–100% slider** (75% by default).
 4. Position the reading with **nine buttons** (top/middle/bottom × left/center/right).
 5. Apply settings to all pages or adjust individual pages.
 6. Export a new PDF and open it in PDF Expert for annotations.
 
-The current version also rotates the whole reading in 90-degree steps.
 Optional additions such as saved layouts and content trimming are recorded
 in the roadmap; the accepted interface remains the baseline.
 
@@ -53,8 +56,9 @@ bash scripts/build-app.sh release /private/tmp/margin-maker-build
 ## Using the app
 
 Open a PDF with Command-O. The default layout is 75%, middle-center. The
-preview uses the same vector PDF engine as export. At 100%, the visible,
-rotated crop box is proportionally fitted inside Letter. Lower percentages
+preview uses the same vector PDF engine as export. At 100%, the visible crop
+box, respecting the PDF's existing orientation, is proportionally fitted inside
+the chosen Letter canvas. Lower percentages
 scale that fitted size; pages are never stretched or automatically trimmed.
 
 Keep **All pages** selected to adjust the whole reading, or choose **This
@@ -62,12 +66,11 @@ page** and use the arrows (Command-[ / Command-]) for individual settings.
 Changing scope alone preserves existing settings. The next adjustment in All
 pages applies the displayed settings to every page.
 
-**Rotate document** turns every source page 90° clockwise before it is fitted
-onto Letter. Click twice for 180°, three times for 270°, or four times to
-return to the original orientation. Rotation applies to the whole document,
-including when This page is selected for positioning and scale. The Letter
-canvas stays portrait; each page keeps its own position and scale settings.
-Preview and export both include the rotation, without changing the original.
+**Page Orientation** offers **Portrait (8.5 × 11 inches)**, the default, and
+**Landscape (11 × 8.5 inches)**. It changes the output canvas for every page,
+including when This page is selected for positioning and scale. Each reading
+keeps its imported orientation, and individual position/scale settings survive
+orientation changes. Preview and export use the same canvas and layout.
 
 Export with Shift-Command-E. The suggested name is `OriginalName-margins.pdf`;
 the app refuses to replace the source, including symlinks and hard links.
@@ -85,7 +88,8 @@ bash scripts/test.sh
 ```
 
 The tests verify actual exported PDFs, rendered anchor positions, crop
-clipping, all four rotations, page order, search/selection, per-page settings,
+clipping, all four source rotations, both canvas orientations, page order,
+search/selection, per-page settings,
 highlight annotations, input errors, and original-file protection. See
 [TESTING.md](TESTING.md) for the local UI checklist and verification results.
 

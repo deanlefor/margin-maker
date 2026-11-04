@@ -8,11 +8,12 @@ The native suite verifies:
 
 - Exact 75% middle-right Letter margins: 153 pt left and 99 pt top/bottom.
 - All nine anchors, with pixel bounds checked in rendered exported PDFs.
-- Letter, A4, landscape, oversized, and small pages at 50%, 75%, and 100%.
+- Portrait and Landscape Letter output with all nine anchors at 50%, 75%, and 100%.
+- Letter, A4, landscape, oversized, and small source pages fitted without distortion.
 - 0/90/180/270-degree rotation with independently positioned corner marks.
-- Document rotation composed with all four source rotations, including crops.
+- Both output orientations respect all four existing source rotations, including crops.
 - Small pages and crops enlarged to the correct Letter fit at each scale.
-- Rotated single-page previews render identically to their full export pages.
+- Single-page previews render identically to their full export pages in both orientations.
 - Offset crop boxes at all four rotations, including clipping hidden content.
 - Letter dimensions, selectable/searchable text, and source page order.
 - Single-page preview, per-page overrides, and all-page adjustments.
@@ -43,10 +44,12 @@ The native suite verifies:
 10. Open the export in PDF Expert, highlight text, write in a margin, save,
     and reopen. This requires PDF Expert to be installed and must be reported
     separately from PDFKit verification.
-11. Click Rotate document four times. Confirm successive 90° clockwise turns
-    and a return to the original orientation. Navigate to another page and
-    verify rotation applies there too, even with This page selected. Export
-    while rotated and verify orientation, crop clipping, and text selection.
+11. Confirm Page Orientation defaults to Portrait (8.5 × 11 in). Switch to
+    Landscape (11 × 8.5 in) and confirm the white canvas becomes wider while
+    the reading stays upright. Navigate to another page and verify Landscape
+    applies there too, even with This page selected. Switch back to Portrait
+    and confirm individual settings survive. Export in both orientations and
+    verify page dimensions, crop clipping, text selection, and preview agreement.
 
 Generate synthetic readings with the optional Python development dependencies:
 
@@ -166,3 +169,46 @@ unchanged. Other audit findings are outside this fix.
 The accepted app executable and working ZIP SHA-256 hashes were unchanged after
 both full test runs. The debug and release logs are retained in the isolated
 test directory as `debug-tests.log` and `release-tests.log`.
+
+### Page Orientation feature QA
+
+Branch `feature/page-orientation` starts from clean main at `78e19c8`, retaining
+the source-file protection fix. Portrait (612 × 792 pt, default) and Landscape
+(792 × 612 pt) replace the four-state document rotation. The canvas orientation
+applies to every page; the source's existing PDF rotation is honored without
+adding rotation. Each page keeps its anchor and scale settings.
+
+- Complete native suite: **28 passed in debug and 28 passed in release** on
+  this Apple Silicon Mac. Existing file-protection regressions also pass.
+- Rendered regression coverage checks all nine anchors at 50%, 75%, and 100%
+  in both orientations, mixed source dimensions, all four source rotations,
+  hidden crop content, small/cropped-page enlargement, searchable/selectable
+  text, and highlight annotations that survive reopening.
+- Single-page previews and the corresponding full-export pages match pixels
+  in both orientations, including mixed sizes/rotations/crops and page overrides.
+  Raster edge checks allow one pixel per edge for antialiasing; layout geometry
+  and page dimensions are checked independently.
+- Separate optimized QA app: verified default Portrait, Landscape canvas with
+  upright reading content, a 63% top-left This page override, switching back
+  to Portrait, navigation to a different 75% middle-center page, and return to
+  the preserved override. Landscape applies to both pages despite This page scope.
+- Saved four-page Portrait and Landscape PDFs through the native save panel.
+  All eight exported pages match engine-generated expected settings pixel for
+  pixel. Independent `pypdf` checks confirm dimensions, page order, text, no
+  residual rotation, and no raster images; `qpdf --check` passes for both files.
+- The QA bundle and a fresh ZIP extraction pass `codesign --verify --strict`.
+  Its display name is **Margin Maker Orientation QA** and its bundle identifier
+  is `local.marginmaker.orientationqa`, separate from the running accepted app.
+
+The QA archive is `build/qa-page-orientation/Margin Maker Orientation QA.zip`.
+Extract it outside iCloud before launching. The tested local app is at
+`/private/tmp/margin-maker-page-orientation/qa-build/Margin Maker Orientation QA.app`.
+Test logs, generated fixtures, and GUI exports are under
+`/private/tmp/margin-maker-page-orientation`. The archive is ad-hoc signed for
+local testing; it is not a notarized distribution build.
+
+Main and the existing `v0.2.0` tag are unchanged. The original app executable
+and working ZIP retain their prior SHA-256 hashes; the installed/running app was
+not replaced or closed. PDF Expert, macOS 13, and Intel hardware remain
+unverified. Existing source annotations/links/forms are still not migrated,
+and this change does not auto-correct readings that are already sideways.
