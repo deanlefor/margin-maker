@@ -335,3 +335,74 @@ all existing project ZIPs, and the supplied handoff ZIP were hashed before work
 and checked again afterward. No installed app is replaced, and nothing is
 merged, pushed, published, notarized, or distributed. The earlier PDF Expert,
 physical Finder dragging, macOS 13, and Intel QA limitations remain unchanged.
+
+### Final 0.3.0 candidate investigation and verification: November 4, 2026
+
+The user confirmed physical Finder drag-and-drop and approved Concept C; earlier
+PDF Expert highlighting was also user-confirmed. These supersede the corresponding
+historical manual gaps above, but are **user results**, not new agent GUI tests.
+The exact 0.3.0 candidate still needs final user acceptance and a complete new
+PDF Expert write/save/reopen check. macOS 13, Intel and clean installation on
+another Mac remain unverified.
+
+The icon was reviewed and fast-forward merged into main at `6c811fd`, with a
+clean working tree. `codex/release-0.3.0` starts there and remains unmerged.
+Normal metadata is Margin Maker, `local.marginmaker.app`, version **0.3.0**,
+build **4**, minimum deployment target 13.0. The QA identity is **Margin Maker
+0.3.0 RC QA**, `local.marginmaker.rc030qa`. Both binaries are arm64 local builds.
+
+| Verification | Result |
+| --- | --- |
+| Complete native debug suite | 54 passed in six suites |
+| Complete native release suite | 54 passed in six suites |
+| Python behavioral reference | Eight passed |
+| Retained native export fixtures | 19 debug + 19 release PDFs pass qpdf without warnings |
+| Independent reportlab-input exports | Six PDFs pass qpdf without warnings, both orientations |
+| Ordinary multilingual text | Poppler and pypdf input/output text agrees for the fixtures |
+| Invisible OCR text layer | Poppler, pypdf and native PDFKit search retain the fixture text |
+| Xref-only repair rendering | Independent Poppler before/after images are pixel-identical |
+| Geometry and upright content | All existing anchor/scale/crop/rotation and preview/export pixel checks pass; representative independent renders inspected |
+| Source safety and asynchronous behavior | All existing file-identity, alias, staging, failure, serialized preview, cancellation, queued-open and drop-provider tests pass |
+| ActualText semantics | **Known failure**: input `academic text` becomes `XXXXX` in both orientations |
+
+The six new native tests cover linked free-list repair without moving content,
+valid/no-op output, CRLF entries, unrecognized/incremental formats, multilingual
+text, and a raster page with an invisible OCR layer. The new finalizer operates
+only on generated Quartz output. No AppModel, controls, layout, source protection
+or Python conversion code changed.
+
+The reproducible `scripts/check-pdf-compatibility.py` uses synthetic inputs,
+Poppler 26.08.0, qpdf 12.3.2 and pypdf. It returns **2** for the known ActualText
+loss, not an all-clear status. Bare Quartz controls reproduce both issues;
+PDFKit drawing loses ActualText while an unchanged PDFKit resave retains it.
+`COMPATIBILITY.md` explains why general preservation was not attempted and why
+unrestricted public distribution remains on hold pending an explicit decision.
+
+Final archives include the signed app plus installation instructions, changelog,
+compatibility report and MIT license. Both bundle identities, versions,
+`CFBundleIconFile`, icon representations/transparent corners, signature resource
+seals and fresh ZIP extractions are checked. Packaging guards preserve existing
+apps and ZIPs. README documents building with Swift tools and no remote native
+dependencies; developer probes are not bundled with the app.
+
+Tracked-file and bundle-content review found no credentials, personal PDFs,
+compiled artifacts or temporary files in the source release set, and no networking
+or telemetry implementation in application sources. The only tracked bitmap is
+the approved icon master. The existing MIT license is unchanged. SwiftPM has no
+remote dependencies. Candidate ZIPs and generated PDFs remain ignored by Git.
+
+Artifacts, logs, rendered fixtures, reproduction JSON and preservation checks are
+under `/private/tmp/margin-maker-030-rc-jpy34ud0`. Durable candidate archive paths
+and remaining actions are in `RELEASE_CHECKLIST.md`. Existing app bundle files
+and all four prior project ZIPs were hashed before work and rechecked unchanged.
+The installed app was not replaced or launched by this task. Main and the v0.2.0
+tag are preserved; no v0.3.0 tag, merge of the release branch, push, paid enrollment,
+certificate change, notarization or publication occurred.
+
+The Command Line Tools test runner continues to warn that its Testing.framework
+was built for macOS 14 while the package targets 13. Provider tests can also log
+sandbox-extension issuance warnings in this restricted test process. All tests
+complete successfully; these logs do not establish macOS 13 compatibility.
+The final 0.3.0 bundles were inspected statically and verified after extraction;
+they were not newly exercised through the GUI in this task. Final user acceptance
+of those exact bundles is still required.

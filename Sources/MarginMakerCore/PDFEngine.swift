@@ -120,7 +120,9 @@ public enum PDFExporter {
         contextIsClosed = true
         try Task.checkCancellation()
         guard output.length > 0 else { throw PDFError.exportFailed }
-        return output as Data
+        let result = PDFCrossReference.repairingQuartzOutput(output as Data)
+        try Task.checkCancellation()
+        return result
     }
 
     public static func validateDestination(_ destination: URL, protecting source: SourceFileProtection) throws {

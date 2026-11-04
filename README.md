@@ -1,160 +1,150 @@
 # Margin Maker
 
-Small, local macOS PDF utility to make room for handwritten margin notes in
-academic readings **before** annotating them in PDF Expert.
+A small, free macOS utility that makes room for handwritten notes around PDF
+readings. Open a PDF, position it on a US Letter canvas, and export a new copy
+before annotating it in PDF Expert or another PDF reader.
 
-The native application uses SwiftUI, PDFKit, and Core Graphics. It has no
-third-party runtime dependencies and needs no Python installation.
+Margin Maker works entirely on your Mac. It has no accounts, telemetry,
+networking, automatic updates, subscriptions, or third-party runtime dependencies.
 
-**Status:** Version **0.2.0** is the accepted working local Mac app. The next
-milestones are a code audit, real PDF Expert and compatibility checks, and
-release packaging. See [NEXT_STEPS.md](NEXT_STEPS.md) for the prioritized
-roadmap and [CODEX_TASK.md](CODEX_TASK.md) for the development handoff.
+## 0.3.0 release candidate
 
-Main includes original-file protection, Portrait/Landscape output, serialized
-previews, queued file opens, and PDF drag-and-drop (`8dc8769`).
-**Feature branch:** `feature/app-icon` integrates the approved Concept C icon.
-The accepted installed app, existing ZIPs, and `v0.2.0` tag remain unchanged.
+This is a **local release candidate for final user acceptance testing**, not a
+published release. The current packaged builds target Apple Silicon. The source
+project targets macOS 13+, but physical testing covers macOS 27.0.1 on Apple
+Silicon; macOS 13 and Intel Macs remain unverified.
 
-## The interaction
+**Unresolved text-preservation limitation:** conversion does not preserve PDF
+`/ActualText` replacements. A document may look correct while copying, searching,
+or accessibility tools receive different text. This can affect ligatures,
+mathematics, and specially encoded or accessible PDFs. Do not use this candidate
+when those replacement semantics must be retained. Unrestricted public release
+requires an explicit decision on this limitation. See [COMPATIBILITY.md](COMPATIBILITY.md).
 
-1. Open a reading (PDF), or drag one PDF from Finder onto the application area.
-2. See its page on a white US Letter canvas; choose Portrait or Landscape.
-3. Set its size with a **50–100% slider** (75% by default).
-4. Position the reading with **nine buttons** (top/middle/bottom × left/center/right).
-5. Apply settings to all pages or adjust individual pages.
-6. Export a new PDF and open it in PDF Expert for annotations.
+## Install the local QA build
 
-Optional additions such as saved layouts and content trimming are recorded
-in the roadmap; the accepted interface remains the baseline.
+1. Extract **Margin Maker 0.3.0 RC QA.zip** outside iCloud or other synced folders.
+2. Open **Margin Maker 0.3.0 RC QA.app**, or copy that separately named app into
+   Applications alongside your working version.
+3. Open a disposable reading first, then inspect its exported copy in your PDF reader.
 
-## Build and run on a Mac
+The QA bundle identifier is `local.marginmaker.rc030qa`, separate from the normal
+`local.marginmaker.app`. The supplied normal app is named **Margin Maker.app**;
+use the QA app during acceptance testing to preserve your installed copy.
+These are ad-hoc-signed local builds, not Developer ID signed or notarized public
+downloads. No installer or background service is included.
 
-Requires **macOS 13+** and **Swift 6.0+** from Xcode or Apple's Command Line
-Tools. Build for the architecture of your current Mac:
+## Use
+
+1. Click **Open PDF**, press Command-O, or drop one PDF from Finder onto the window.
+2. Choose **Portrait** (8.5 × 11 inches, default) or **Landscape** (11 × 8.5 inches).
+   This changes the canvas for the whole document; the reading stays upright,
+   respecting its existing PDF orientation.
+3. Choose one of nine positions and set the scale from **50% to 100%**. Defaults
+   are **75%, middle-center**. At 100%, the visible source page is proportionally
+   fitted inside the chosen canvas, including small and cropped pages.
+4. Keep **All pages** selected, or choose **This page** to adjust individual pages.
+   Changing scope alone preserves existing settings. Orientation always applies
+   to the whole document, while individual positions and scales survive.
+5. Export with Shift-Command-E. The suggested filename is `Reading-margins.pdf`.
+6. Annotate the exported copy in PDF Expert or another reader.
+
+Preview and export share the same vector engine. Ordinary selectable text and
+conventional invisible OCR text layers are retained in the tested fixtures;
+scans without OCR remain images. Content is never stretched or automatically
+trimmed. Command-[ and Command-] navigate pages.
+
+The exporter protects the imported original, including renamed files and aliases
+on the same filesystem, and stages a new PDF before atomic replacement. A failed
+new import retains the current reading and its settings. While an import/export
+is busy, the latest open request is queued and displayed as **Next**. Rapid
+adjustments coalesce into one preview worker.
+
+## Known limitations
+
+- `/ActualText` and accessible document structure are not preserved; see the
+  release decision and reproduction evidence in [COMPATIBILITY.md](COMPATIBILITY.md).
+- Existing annotations, links, forms, outlines, and signatures are not migrated.
+  Prepare margins **before** annotating. This is not an accessibility or archival
+  conversion tool and does not add OCR.
+- Password-locked PDFs require an unlocked copy from another PDF application.
+- A cross-volume copy/delete creates a new file identity; reopen that copy to
+  protect it as the imported source. A small race with another process changing
+  the destination immediately before replacement remains; see [TESTING.md](TESTING.md).
+- Core Graphics cannot interrupt an individual page draw midway. The latest
+  preview waits for the old drawing to finish; pending opens wait for import/export.
+- macOS 13, Intel hardware, clean installation on another Mac, and the exact
+  release-candidate/PDF Expert interaction need further testing. The user has
+  verified Finder dropping, the icon, and earlier PDF Expert highlighting.
+
+## Build from source
+
+Use a Mac with Swift 6.0+ from Xcode or Apple's Command Line Tools. No packages
+are downloaded by the native app build. It produces the current Mac architecture.
 
 ```bash
-bash scripts/build-app.sh
-open "build/Margin Maker.app"
+bash scripts/build-app.sh release /private/tmp/margin-maker-030-local
 ```
 
-For a development build: `bash scripts/build-app.sh debug`. Alternatively,
-open `Package.swift` in Xcode and run the MarginMaker scheme, or use
-`swift run MarginMaker`.
+The output directory contains **Margin Maker.app** and **Margin Maker.zip**.
+Use `debug` instead of `release` for a development build. Existing apps and ZIPs
+are refused; choose a fresh output directory. Signing happens in a temporary
+local folder before the bundle is copied or archived, avoiding iCloud metadata
+in the ZIP. Extract the archive outside synced storage.
 
-The script creates and verifies an **ad-hoc signed local app**. Developer ID
-signing, notarization, universal builds, and public distribution are separate
-work. The package has no remote dependencies. A `build/Margin Maker.zip`
-archive is also created without Finder metadata. For an iCloud checkout,
-extract that archive outside iCloud before moving the app to Applications;
-iCloud can reattach metadata that invalidates bundle signature checks.
-You can instead choose a local output directory:
+To reproduce the separate QA package:
 
 ```bash
-bash scripts/build-app.sh release /private/tmp/margin-maker-build
+MARGIN_MAKER_APP_NAME="Margin Maker 0.3.0 RC QA" \
+MARGIN_MAKER_BUNDLE_ID="local.marginmaker.rc030qa" \
+bash scripts/build-app.sh release /private/tmp/margin-maker-030-qa
 ```
 
-Builds refuse to replace an existing app or ZIP; choose a fresh output directory.
-The approved transparent icon master is retained under `Packaging/AppIcon`.
-macOS `sips` and `iconutil` generate the icon before bundle signing; see that
-directory's README for provenance and reproducibility details.
+Both overrides are required together. Native `sips` and `iconutil` generate the
+approved Concept C icon from the unchanged master under `Packaging/AppIcon` and
+embed it before signing. See [the artwork record](Packaging/AppIcon/README.md).
+The build does not install, notarize, publish, or change signing certificates.
 
-To create the separately named icon QA app without changing regular app metadata:
-
-```bash
-MARGIN_MAKER_APP_NAME="Margin Maker Icon QA" \
-MARGIN_MAKER_BUNDLE_ID="local.marginmaker.iconqa" \
-bash scripts/build-app.sh release /private/tmp/margin-maker-icon-qa
-```
-
-Both overrides are required together. The output is `Margin Maker Icon QA.app`
-and `Margin Maker Icon QA.zip`; this does not install or replace an application.
-
-## Using the app
-
-Open a PDF with Command-O. The default layout is 75%, middle-center. The
-preview uses the same vector PDF engine as export. At 100%, the visible crop
-box, respecting the PDF's existing orientation, is proportionally fitted inside
-the chosen Letter canvas. Lower percentages
-scale that fitted size; pages are never stretched or automatically trimmed.
-
-You can also drop one PDF anywhere in the main application area, including
-the preview and controls. A subtle border marks a PDF candidate under the
-pointer. Folders, multiple files, and unsupported file types are rejected with
-feedback; the importer checks PDF validity and password protection on opening.
-
-If another import or export is running, the latest open request is retained
-and processed when safe. Its filename appears as **Next** during the busy
-operation. Picker, Finder, and drop requests share the protected importer.
-An unsuccessful new import keeps the current reading and its page settings.
-
-Keep **All pages** selected to adjust the whole reading, or choose **This
-page** and use the arrows (Command-[ / Command-]) for individual settings.
-Changing scope alone preserves existing settings. The next adjustment in All
-pages applies the displayed settings to every page.
-
-**Page Orientation** offers **Portrait (8.5 × 11 inches)**, the default, and
-**Landscape (11 × 8.5 inches)**. It changes the output canvas for every page,
-including when This page is selected for positioning and scale. Each reading
-keeps its imported orientation, and individual position/scale settings survive
-orientation changes. Preview and export use the same canvas and layout.
-
-Export with Shift-Command-E. The suggested name is `OriginalName-margins.pdf`;
-the app refuses to replace the source, including symlinks and hard links.
-Source identity is captured at import, so protection follows renames and moves
-within the same filesystem, including Finder aliases and alternate paths.
-Exports are staged beside the destination and checked again immediately before
-atomic replacement. A cross-volume copy/delete creates a different file identity;
-reopen that copy if it should become the protected source.
-The **PDF exported** menu opens the result or reveals it in Finder.
-
-## Native tests
+## Verify
 
 ```bash
 bash scripts/test.sh
+bash scripts/test.sh -c release
 ```
 
-The tests verify actual exported PDFs, rendered anchor positions, crop
-clipping, all four source rotations, both canvas orientations, page order,
-search/selection, per-page settings,
-highlight annotations, input errors, and original-file protection. See
-[TESTING.md](TESTING.md) for the local UI checklist and verification results.
+The native suite covers page geometry, both orientations, rotations/crops,
+preview/export agreement, text and OCR layers, annotations, file protection,
+cancellation, queued imports, dropped-file providers, and the Quartz xref repair.
+Recorded results and remaining manual checks are in [TESTING.md](TESTING.md).
 
-## Implementation and Python reference
-
-`Sources/MarginMaker` contains the native UI, file panels, and PDFKit preview.
-Loading, preview generation, and export run off the UI thread. Preview
-requests are debounced and coalesced to the latest settings. Only one preview
-conversion runs at a time; a cancelled drawing finishes before its replacement
-starts, and revision checks prevent stale results from appearing.
-`Sources/MarginMakerCore` contains the independent, tested layout and vector
-PDF engine. Source bytes are held in an immutable snapshot.
-
-`margin_maker/core.py` is the original `pypdf` behavioral reference. It is
-retained with its tests and is not used or bundled by the Mac application.
-
-Text stays selectable/searchable when supported by the source PDF. Scans stay
-images. Original annotations, links, interactive forms, outlines, and document
-signatures are not migrated: annotate the exported PDF afterward.
-Password-locked inputs need an unlocked copy from another PDF viewer first.
-
-### Run the core tests
-
-With Python 3.10 or newer:
+Optional Python reference and independent PDF checks use the development-only
+packages from `requirements-dev.txt`, plus qpdf and Poppler for compatibility checks:
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements-dev.txt
 python -m unittest discover -s tests -v
+python scripts/check-pdf-compatibility.py /private/tmp/margin-maker-compatibility
 ```
 
-## Sharing the application later
+The independent check requires a new output directory. It intentionally exits
+**2** while the known `/ActualText` loss remains; its JSON report distinguishes
+that limitation from structural checks and successful ordinary/OCR extraction.
+Use `--font /path/to/font.ttf` if Arial Unicode is unavailable on your Mac.
+No test reads personal PDFs. Python and the validation tools are not bundled
+with the application.
 
-The project code is available under the MIT license (`LICENSE`). The Mac app
-uses only Apple system frameworks and bundles no AGPL dependencies. The
-optional Python reference uses BSD-3-Clause licensed `pypdf`.
+## Project and license
 
-The intended result is a free Mac app distributed through a normal download,
-without subscriptions, accounts, or PDF uploads. Publication to GitHub and
-code signing/notarization are separate future steps, not part of this handoff.
+- `Sources/MarginMaker`: SwiftUI interface, file panels, drop handling, PDFKit preview.
+- `Sources/MarginMakerCore`: layout, source protection, vector export, xref normalization.
+- `tests/MarginMakerCoreTests`: native regression tests.
+- `Packaging` and `scripts`: approved artwork, metadata, build and verification tools.
+- `margin_maker/core.py`: optional Python behavioral reference, not an app dependency.
+
+The project uses the existing [MIT license](LICENSE). Apple system frameworks
+supply the native runtime; no AGPL dependency has been introduced. The optional
+Python reference uses BSD-3-Clause licensed pypdf. See [CHANGELOG.md](CHANGELOG.md)
+for changes since v0.2.0 and [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for the
+remaining approval and distribution work.

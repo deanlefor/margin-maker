@@ -59,8 +59,12 @@ xattr -dr com.apple.ResourceFork "$app" 2>/dev/null || true
 # Ad-hoc signing allows local execution. This is NOT Developer ID signing or notarization.
 codesign --force --sign - "$app"
 codesign --verify --strict "$app"
+# Ship the candidate's scope and installation notes beside the signed bundle.
+for document in INSTALL.md CHANGELOG.md COMPATIBILITY.md LICENSE; do
+    cp "$document" "$staging_dir/$document"
+done
 # A metadata-free archive remains intact when this checkout is in iCloud Drive.
-ditto --norsrc --noextattr -c -k --keepParent "$app" "$zip_output"
+ditto --norsrc --noextattr -c -k "$staging_dir" "$zip_output"
 ditto --norsrc --noextattr "$app" "$app_output"
 echo "Built local app: $app_output"
 echo "Local app archive: $zip_output"
