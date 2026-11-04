@@ -53,7 +53,7 @@ final class AppModel: ObservableObject {
             }
             do {
                 let loaded = try await Task.detached(priority: .userInitiated) {
-                    try PDFSource(data: Data(contentsOf: url))
+                    try PDFSource(contentsOf: url)
                 }.value
                 source = loaded
                 sourceURL = url
@@ -148,7 +148,7 @@ final class AppModel: ObservableObject {
     }
 
     private func export(to destination: URL) {
-        guard canExport, let source, let sourceURL, let settings else { return }
+        guard canExport, let source, let protection = source.fileProtection, let settings else { return }
         isBusy = true
         activity = "Exporting \(source.pageCount) \(source.pageCount == 1 ? "page" : "pages")…"
         Task {
@@ -159,10 +159,10 @@ final class AppModel: ObservableObject {
             }
             do {
                 try await Task.detached(priority: .userInitiated) {
-                    try PDFExporter.validateDestination(destination, sourceURL: sourceURL)
+                    try PDFExporter.validateDestination(destination, protecting: protection)
                     let data = try PDFExporter.export(source: source, layouts: settings.pages,
                                                       rotation: settings.rotation)
-                    try PDFExporter.write(data, to: destination, protecting: sourceURL)
+                    try PDFExporter.write(data, to: destination, protecting: protection)
                 }.value
                 exportedURL = destination
             } catch {

@@ -71,6 +71,11 @@ Preview and export both include the rotation, without changing the original.
 
 Export with Shift-Command-E. The suggested name is `OriginalName-margins.pdf`;
 the app refuses to replace the source, including symlinks and hard links.
+Source identity is captured at import, so protection follows renames and moves
+within the same filesystem, including Finder aliases and alternate paths.
+Exports are staged beside the destination and checked again immediately before
+atomic replacement. A cross-volume copy/delete creates a different file identity;
+reopen that copy if it should become the protected source.
 The **PDF exported** menu opens the result or reveals it in Finder.
 
 ## Native tests

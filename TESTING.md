@@ -19,6 +19,10 @@ The native suite verifies:
 - Empty/invalid/password-locked input and invalid settings/page indices.
 - Source byte preservation and protection of paths, symlinks, hard links,
   and case aliases on case-insensitive volumes.
+- Import-time identity protection after source/file-directory renames and moves,
+  retargeted import symlinks, unlinked hard links, and Finder aliases.
+- Destination changes after staging, pinned destination-directory replacement,
+  cleanup after rejected/failed replacement, and failed staging without data loss.
 - Adding a highlight annotation and reopening the exported PDF with PDFKit.
 
 ## Manual Mac smoke test
@@ -120,3 +124,45 @@ helper text correctly. The original running app session was left intact.
   order, searchable text, and no raster images. `qpdf --check` passed. Poppler
   renders of Letter, pre-rotated, and cropped pages were inspected visually.
   The source's SHA-256 was unchanged. PDF Expert remains unverified here.
+
+### Focused source-file protection fix
+
+Validation on this Apple Silicon Mac: **28 native tests passed in debug and
+28 passed in release**, including 10 new tests with 13 filesystem scenarios.
+The non-root permission-failure test executed and passed in both configurations.
+The existing Command Line Tools warning about Testing.framework's macOS 14
+minimum remains limited to the test executable; app deployment remains macOS 13.
+
+The `fix/source-file-protection` branch starts at the accepted `v0.2.0` tag.
+Import now reads PDF bytes and captures device/inode identity through the same
+file handle. That read handle remains open with the source snapshot, preventing
+inode reuse while the imported file is protected. Both the imported path and its
+resolved path remain reserved as an additional conservative check.
+
+Exports use an exclusively created temporary sibling in a pinned directory.
+After writing, synchronizing, and closing the staged PDF, the writer rechecks
+the destination and immediately calls directory-relative `renameat`. Errors
+remove the staging file and leave existing destination/source data intact.
+
+Regression coverage includes renamed/moved source files and source directories;
+case, relative-path, directory-symlink, hard-link, and Finder aliases; import
+symlink retargeting; hard-link unlink/path reuse; independent copies and new
+destinations; and source/alias substitutions after staging. Directory-rename
+and failure tests check that writes cannot be redirected to a different parent
+and that temporary files are cleaned up. Permission tests require a non-root
+test process.
+
+Limits: a cross-volume copy/delete creates a new identity and must be reopened
+to become the protected source. A small final `fstatat`-to-`renameat` race remains
+if another process changes the final directory entry in that interval; validation
+and replacement are not one conditional filesystem operation. No original is
+opened for writing. Power-loss durability and coordination with arbitrary
+concurrent external filesystem mutations are not guaranteed.
+
+Build/test products for this fix are isolated under
+`/private/tmp/margin-maker-source-protection`. The accepted app/ZIP are not
+rebuilt, installed, or replaced; interface, defaults, and PDF rendering are
+unchanged. Other audit findings are outside this fix.
+The accepted app executable and working ZIP SHA-256 hashes were unchanged after
+both full test runs. The debug and release logs are retained in the isolated
+test directory as `debug-tests.log` and `release-tests.log`.

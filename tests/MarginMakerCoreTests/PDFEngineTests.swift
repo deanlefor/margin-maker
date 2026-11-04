@@ -385,18 +385,20 @@ struct PDFEngineTests {
         let output = directory.appendingPathComponent("reading-margins.pdf")
         let input = try fixture()
         try input.write(to: original)
+        let source = try PDFSource(contentsOf: original)
+        let protection = try unwrap(source.fileProtection)
         try FileManager.default.createSymbolicLink(at: symlink, withDestinationURL: original)
         try FileManager.default.linkItem(at: original, to: hardlink)
         let result = try export(input)
         for alias in [original, symlink, hardlink, directory.appendingPathComponent("READING.pdf")] {
             // Case aliases only exist on a case-insensitive volume.
             if FileManager.default.fileExists(atPath: alias.path) {
-                expectThrows(try PDFExporter.write(result, to: alias, protecting: original)) {
+                expectThrows(try PDFExporter.write(result, to: alias, protecting: protection)) {
                     expectEqual($0 as? PDFError, .originalFile)
                 }
             }
         }
-        try PDFExporter.write(result, to: output, protecting: original)
+        try PDFExporter.write(result, to: output, protecting: protection)
         expectEqual(try Data(contentsOf: original), input)
         expectEqual(try Data(contentsOf: output), result)
     }

@@ -1,5 +1,6 @@
 import Foundation
 import CoreGraphics
+import Darwin
 
 public enum PDFError: LocalizedError, Equatable {
     case emptyFile, invalidPDF, locked, noPages, invalidPage, invalidScale
@@ -26,9 +27,20 @@ public enum PDFError: LocalizedError, Equatable {
 public struct PDFSource: Sendable {
     public let data: Data
     public let visiblePageSizes: [CGSize]
+    public let fileProtection: SourceFileProtection?
     public var pageCount: Int { visiblePageSizes.count }
 
     public init(data: Data) throws {
+        try self.init(data: data, fileProtection: nil)
+    }
+
+    /// Read the snapshot and capture its identity through the same open file handle.
+    public init(contentsOf url: URL) throws {
+        let protection = try SourceFileProtection(sourceURL: url)
+        try self.init(data: protection.readData(), fileProtection: protection)
+    }
+
+    private init(data: Data, fileProtection: SourceFileProtection?) throws {
         let document = try Self.open(data)
         guard document.numberOfPages > 0 else { throw PDFError.noPages }
         var sizes: [CGSize] = []
@@ -44,6 +56,7 @@ public struct PDFSource: Sendable {
                          ? CGSize(width: box.height, height: box.width) : box.size)
         }
         self.data = data
+        self.fileProtection = fileProtection
         visiblePageSizes = sizes
     }
 
@@ -105,24 +118,16 @@ public enum PDFExporter {
         return output as Data
     }
 
-    /// Also rejects symlinks and hard links to the original, including case aliases.
-    public static func validateDestination(_ destination: URL, sourceURL: URL) throws {
-        let source = sourceURL.standardizedFileURL.resolvingSymlinksInPath()
-        let target = destination.standardizedFileURL.resolvingSymlinksInPath()
-        guard source != target else { throw PDFError.originalFile }
-        let manager = FileManager.default
-        if let a = try? manager.attributesOfItem(atPath: source.path),
-           let b = try? manager.attributesOfItem(atPath: target.path),
-           let sourceInode = a[.systemFileNumber] as? NSNumber,
-           let targetInode = b[.systemFileNumber] as? NSNumber,
-           sourceInode == targetInode,
-           (a[.systemNumber] as? NSNumber) == (b[.systemNumber] as? NSNumber) {
-            throw PDFError.originalFile
-        }
+    public static func validateDestination(_ destination: URL, protecting source: SourceFileProtection) throws {
+        let directory = Darwin.open(destination.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard directory >= 0 else { throw NSError(domain: NSPOSIXErrorDomain, code: Int(errno)) }
+        defer { close(directory) }
+        try source.validateDestination(destination, directory: directory)
     }
 
-    public static func write(_ data: Data, to destination: URL, protecting sourceURL: URL) throws {
-        try validateDestination(destination, sourceURL: sourceURL)
-        try data.write(to: destination, options: .atomic)
+    public static func write(_ data: Data, to destination: URL, protecting source: SourceFileProtection) throws {
+        try validateDestination(destination, protecting: source)
+        let staged = try StagedPDFWrite(data: data, destination: destination)
+        try staged.commit(protecting: source)
     }
 }
