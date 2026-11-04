@@ -134,3 +134,15 @@ This run's synthetic evidence and logs are under
 `fixtures-debug` and `fixtures-release`, and the reproducible report is
 `independent/report.json`. Raw framework control files intentionally retain the
 known defects; the clean-export count above excludes those controls.
+
+## Subsequent safeguard feasibility investigation
+
+The follow-up on `codex/actualtext-safeguard` did not establish a dependable small
+native rejection check. Parsed object/stream probes detected the obvious cases,
+but resource-context and decoder-completeness counterexamples prevented treating
+negative scans as proof of safety. No partial detector was integrated and no
+safeguard QA package was created. The application remains identical to the
+`0e31d56b` candidate, with the same ActualText limitation and public-release hold.
+See [ACTUALTEXT_SAFEGUARD.md](ACTUALTEXT_SAFEGUARD.md) for evidence, qualifications
+and alternatives; this conclusion does not assert that a fuller detector is
+impossible.
