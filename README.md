@@ -7,6 +7,51 @@ highlighting or handwriting in PDF Expert or another annotation app.
 Academic readings rarely leave enough space for handwritten notes. Margin Maker
 does one job: make that space, without becoming a PDF editor.
 
+## Known limitations
+
+- **PDF text semantics:** Certain PDFs using `/ActualText` may lose replacement-text
+  information during conversion. Copying, searching, and accessibility can be
+  affected even when the pages look correct. Ordinary vector text and conventional
+  invisible OCR layers pass the tested fixtures, but the application **does not
+  guarantee lossless preservation of all PDF structures**. Original source
+  documents are protected from replacement. There is no automatic `/ActualText`
+  detector. See [the compatibility report](COMPATIBILITY.md) and the detailed
+  [investigation for contributors](ACTUALTEXT_SAFEGUARD.md).
+- **Annotations:** Keep your original PDFs and prepare margins **before**
+  highlighting or handwriting. Existing annotations are not guaranteed to survive
+  conversion. Links, forms, outlines, signatures, and accessible document structure
+  are not migrated.
+- **Mac compatibility:** The public ZIP contains only Apple Silicon (arm64) code.
+  **macOS 13 and Intel compatibility remain unverified**, as does clean installation
+  on another Mac. Local testing covers Apple Silicon on macOS 27.0.1.
+- **Signing:** The app is ad-hoc signed, without Developer ID signing or Apple
+  notarization. macOS may display security warnings. See [installation instructions](INSTALL.md)
+  and [Apple's official opening guidance](https://support.apple.com/en-us/102445).
+- Password-locked PDFs need an unlocked copy from another PDF application.
+  Scans without OCR remain images; Margin Maker does not add OCR or trim content.
+- A cross-volume copy creates a new file identity; reopen that copy to protect it
+  as the imported source. Concurrent external changes to export destinations and
+  power-loss durability have limits described in [TESTING.md](TESTING.md).
+- An individual Core Graphics page draw cannot be interrupted midway. Large
+  pages can delay the next preview or queued import.
+
+The `/ActualText` limitation is accepted and disclosed for **v0.3.0**. It remains
+a known issue, not a claim of complete text preservation.
+
+## Download and install
+
+1. [Download Margin Maker v0.3.0 for Apple Silicon (ZIP)](https://github.com/deanlefor/margin-maker/releases/download/v0.3.0/Margin.Maker.0.3.0.macOS.Apple.Silicon.zip).
+   The [public release](https://github.com/deanlefor/margin-maker/releases/tag/v0.3.0)
+   also includes release notes; its source-code archives are for building from source.
+2. Double-click the ZIP in Finder to extract it outside iCloud or other synced storage.
+3. Open **Margin Maker.app** from the extracted folder. Keep it separate from older
+   copies so you launch this version. If macOS blocks it, follow the application-specific
+   steps in [INSTALL.md](INSTALL.md).
+
+The download is **v0.3.0, build 4**, and requires no build tools. [INSTALL.md](INSTALL.md)
+includes the SHA-256 checksum, security-warning guidance, and details about the
+unchanged archive's historical documentation.
+
 ## Use
 
 1. Click **Open PDF**, press Command-O, or drop one PDF from Finder onto the window.
@@ -39,8 +84,8 @@ iCloud or other synced storage before opening the app. See [INSTALL.md](INSTALL.
 The native build uses Apple frameworks and downloads no third-party packages.
 It builds for the current Mac's architecture, generates the approved icon with
 `sips`/`iconutil`, and signs locally with an ad-hoc signature. No Apple developer
-account is needed. This project publishes source; Developer ID signing,
-notarization, installers, and public binary distribution are outside this release.
+account is needed. The public v0.3.0 download is the verified Apple Silicon build.
+Developer ID signing, Apple notarization, and installers are not included.
 
 ## macOS compatibility
 
@@ -55,30 +100,6 @@ PDF processing happens locally on your Mac and works fully offline. Margin Maker
 has no uploads, accounts, analytics, telemetry, subscriptions, automatic updates,
 or application networking. You choose where to save the exported copy; a folder
 managed by iCloud or another sync service follows that service's settings.
-
-## Known limitations
-
-- **PDF text semantics:** Certain PDFs using `/ActualText` may lose replacement-text
-  information during conversion. Copying, searching, and accessibility can be
-  affected even when the pages look correct. Ordinary vector text and conventional
-  invisible OCR layers pass the tested fixtures, but the application **does not
-  guarantee lossless preservation of all PDF structures**. Original source
-  documents are protected from replacement. There is no automatic `/ActualText`
-  detector. See [the compatibility report](COMPATIBILITY.md) and the detailed
-  [investigation for contributors](ACTUALTEXT_SAFEGUARD.md).
-- **Annotations:** Prepare margins **before** highlighting or handwriting.
-  Existing annotations are not guaranteed to survive conversion. Links, forms,
-  outlines, signatures, and accessible document structure are not migrated.
-- Password-locked PDFs need an unlocked copy from another PDF application.
-  Scans without OCR remain images; Margin Maker does not add OCR or trim content.
-- A cross-volume copy creates a new file identity; reopen that copy to protect it
-  as the imported source. Concurrent external changes to export destinations and
-  power-loss durability have limits described in [TESTING.md](TESTING.md).
-- An individual Core Graphics page draw cannot be interrupted midway. Large
-  pages can delay the next preview or queued import.
-
-The `/ActualText` limitation is accepted for **v0.3.0 personal use and source
-publication**. It remains a known issue, not a claim of complete text preservation.
 
 ## Tests and contributions
 
