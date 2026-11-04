@@ -3,6 +3,12 @@
 November 4, 2026. Starting point: clean `codex/release-0.3.0` at `0e31d56b`.
 Investigation branch: `codex/actualtext-safeguard`.
 
+**Final v0.3.0 decision:** The user accepted the documented ActualText limitation
+for personal use and source publication. This report preserves the earlier
+investigation; its experimental detector was never integrated. Further safeguard
+or engine development is outside this release. The final decision supersedes
+the investigation's earlier recommendation to hold release pending a decision.
+
 ## Decision
 
 **A dependable safeguard has not been established within the requested narrow
@@ -18,9 +24,8 @@ Core Graphics scan fails. It is a decision not to certify an unproven small
 safeguard. A fuller resource-aware parsing/validation component, or an explicitly
 restricted supported-format policy, needs a separate scope decision.
 
-The existing 0.3.0 candidate still loses ActualText. Its public-distribution hold
-and prominent limitation disclosure remain in force. Existing packages have not
-been replaced or relabelled as protected.
+The 0.3.0 engine still loses ActualText. Prominent limitation disclosure remains
+in force. No package is described as protected by a detector.
 
 ## What was investigated
 
@@ -117,19 +122,17 @@ make an exact semantic-equivalence determination.
 3. **Object-preserving composition.** Preserve the original streams/resources
    rather than redrawing them. This remains the larger engine change already
    excluded from this task.
-4. **Retain the documented limitation.** Keep the existing candidate's restricted
-   status and obtain an explicit scope decision before public distribution. This
-   does not provide the requested safeguard and must not be described as one.
+4. **Retain the documented limitation.** This was the final choice for v0.3.0
+   personal use and source publication. It does not provide a safeguard and must
+   not be described as one.
 
-Recommendation: do not finalise an unrestricted 0.3.0 release on the strength of
-the small native prototype. Choose option 1 or an explicitly approved option 2
-if dependable rejection is required. Do not undertake an engine rewrite merely
-because a superficial key search is insufficient.
+The investigation recommended against treating the small prototype as dependable
+protection. Options 1 and 2 remain possible future work if rejection is required.
+The accepted limitation is sufficient for the finalized v0.3.0 scope.
 
 ## Evidence and verification performed
 
-All inputs were synthetic. Prototypes, generators and outputs are retained under
-`/private/tmp/margin-maker-actualtext-qh82aqho`:
+All inputs were synthetic. The original local scratch directory contained:
 
 - `Inspection.swift`: exploratory object/stream walker; **not production code**.
 - `trace.swift`: resource-context counterexample using public Core Graphics calls.
@@ -137,19 +140,28 @@ All inputs were synthetic. Prototypes, generators and outputs are retained under
   positive/negative, resource-context and malformed-input probes.
 - `findings.json`: qpdf result, independent extracted text, scanner trace and checksum.
 
-The key counterexample can be rechecked on this Mac with:
+Those temporary probes are not part of the repository and may no longer exist.
+The resource-context and damaged-stream observations above are a historical
+investigation record, not a committed reproducible detector test suite.
+
+To reproduce the user-visible text loss from committed source, install the
+development tools described in [TESTING.md](TESTING.md) and run on a Mac:
 
 ```bash
-qpdf --check /private/tmp/margin-maker-actualtext-qh82aqho/fixtures-more/named-image-form.pdf
-pdftotext /private/tmp/margin-maker-actualtext-qh82aqho/fixtures-more/named-image-form.pdf -
-swiftc -parse-as-library /private/tmp/margin-maker-actualtext-qh82aqho/trace.swift -o /private/tmp/actualtext-trace
-/private/tmp/actualtext-trace /private/tmp/margin-maker-actualtext-qh82aqho/fixtures-more/named-image-form.pdf
+python scripts/check-pdf-compatibility.py /private/tmp/margin-maker-actualtext-repro
+pdftotext /private/tmp/margin-maker-actualtext-repro/actualtext.pdf -
+pdftotext /private/tmp/margin-maker-actualtext-repro/actualtext-Portrait.pdf -
 ```
 
-Only investigation documentation is changed on the branch. The application,
-engine, tests, package metadata and build scripts are byte-identical to `0e31d56b`.
-The complete native/Python suites were not rerun for this documentation-only
-outcome; the prior candidate's 54 debug, 54 release and eight Python results are
-historical results, not new safeguard regression results. No safeguard QA build
-was produced because no safeguard was implemented. Main, the release branch,
-installed apps, all prior ZIPs and the v0.2.0 baseline remain preserved.
+Use a new output directory. The first command exits **2** for the accepted known
+loss; inspect `report.json`. The input extracts as `academic text`; both Portrait
+and Landscape exports extract as `XXXXX`. The generated fixture uses an inline
+marked-content property dictionary and requires no personal PDF. This gives
+future contributors a minimal semantic-preservation example without integrating
+the incomplete detector. See [COMPATIBILITY.md](COMPATIBILITY.md) for the drawing
+and PDFKit controls.
+
+Commit `774f7c6` changed only investigation documentation. No safeguard QA build
+was produced because no safeguard was implemented. Current release verification
+is recorded separately in [TESTING.md](TESTING.md); passing those tests is not
+evidence of a working ActualText safeguard.

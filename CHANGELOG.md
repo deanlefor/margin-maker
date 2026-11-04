@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 - release candidate, unreleased
+## 0.3.0 - 2026-11-04
 
 Changes since the accepted v0.2.0 baseline:
 
@@ -23,14 +23,20 @@ Changes since the accepted v0.2.0 baseline:
 - Package version 0.3.0, build 4, with separate normal and QA identities and
   documentation. Existing apps and ZIPs are refused rather than overwritten.
 
-**Unresolved:** ActualText replacement semantics/accessibility structure are not
-preserved by the drawing engine. This is a significant pre-existing limitation,
-now reproduced and prominently disclosed. Unrestricted public distribution is
-on hold pending an explicit scope decision; see `COMPATIBILITY.md`.
+**Known limitation accepted for this version:** Certain PDFs using `/ActualText`
+lose replacement-text information, affecting copying, searching, and accessibility
+even when visually correct. The app does not guarantee lossless preservation of
+all PDF structures. Existing annotations are not guaranteed to survive conversion;
+prepare margins before annotation. Original source documents are protected from
+replacement. See [COMPATIBILITY.md](COMPATIBILITY.md).
+
+Finalized for personal use and MIT-licensed source publication. The detailed
+ActualText investigation is retained without its unfinished detector. No public
+binary distribution, Developer ID signing, or notarization is included.
 
 ## 0.2.0 - accepted local baseline
 
 Centered 75% default, nine positions, 50-100% scale, per-page settings,
 four-state document rotation, vector export with crop/rotation handling, and
 local SwiftUI/PDFKit workflow. The original `v0.2.0` tag and accepted builds remain
-preserved. This changelog does not designate or tag a final 0.3.0 release.
+preserved.

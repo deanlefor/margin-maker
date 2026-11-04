@@ -1,20 +1,23 @@
-# PDF compatibility investigation: 0.3.0 release candidate
+# PDF compatibility: 0.3.0
 
 Investigated November 4, 2026 on Apple Silicon, macOS 27.0.1, Swift 6.2.3.
-The icon was reviewed and merged into main at `6c811fd`. Investigation and release
-preparation are isolated on `codex/release-0.3.0`; this branch is not merged.
+The completed release preparation (`0e31d56`) and documentation-only safeguard
+investigation (`774f7c6`) are incorporated into main. No detector prototype is
+included. The engine remains unchanged from the completed release preparation.
 
 ## Disposition
 
 | Issue | Result | Release disposition |
 | --- | --- | --- |
-| `/ActualText` replacement semantics | Confirmed lost in both orientations; not fixed | Significant known limitation. Hold unrestricted public distribution pending an explicit user decision. |
+| `/ActualText` replacement semantics | Confirmed lost in both orientations; not fixed | Accepted, documented limitation for v0.3.0 personal use and source publication. |
 | Offset-zero in-use xref entry | Confirmed in bare Quartz and both engine orientations; narrowly repaired | Fixed for the observed Quartz output format, with native regression and independent validation. |
 
-The candidate is available for acceptance testing on ordinary readings. It is
-**not an unrestricted, text-semantics-preserving release**. No automatic detector
-or in-app warning for `/ActualText` has been added; a visually correct preview is
-not evidence that replacement text survived.
+The application does not guarantee lossless preservation of all PDF structures.
+No automatic detector or in-app warning for `/ActualText` has been added; a
+visually correct preview is not evidence that replacement text survived.
+Existing annotations are not guaranteed to survive conversion. Prepare margins
+before highlighting or handwriting. Original source documents are protected
+from replacement. Source publication does not include a public binary release.
 
 ## A. `/ActualText`
 
@@ -53,13 +56,13 @@ provides no transparent forwarding of each input span while `drawPDFPage` runs.
 - Input files remain untouched. This is a semantic loss in the exported copy,
   not corruption of the imported original or a visual page-layout failure.
 
-### Options and recommendation
+### Decision and possible future approaches
 
 1. **Accept and prominently disclose the restricted scope.** Keep the small native
    tool for visual pre-annotation layout of ordinary PDFs. Retain the original
    for semantic copying/search/accessibility, and do not use the conversion when
-   replacement semantics are required. This requires explicit approval before
-   unrestricted public distribution; it is not silently assumed by this branch.
+   replacement semantics are required. The user explicitly selected this option
+   for finalizing v0.3.0 and preparing its source for publication.
 2. **Reject affected inputs.** A reliable detector would need to scan marked
    content, named property resources, and nested forms, not merely grep bytes.
    This would change which readings the application accepts and merits a separate
@@ -72,9 +75,8 @@ provides no transparent forwarding of each input span while `drawPDFPage` runs.
 
 Blindly overlaying replacement text, assigning a whole page one replacement, or
 matching glyph strings after redrawing is not a reliable fix for multiple spans,
-nested content, reading order, clipping, or search geometry. Recommendation:
-finish local candidate testing, keep public distribution on hold, and obtain an
-explicit decision on option 1 versus separate work on options 2/3.
+nested content, reading order, clipping, or search geometry. Options 2 and 3 are
+future contributor topics, not remaining work or blockers for v0.3.0.
 
 ## B. Cross-reference entry
 
@@ -119,6 +121,8 @@ then run on a Mac with Swift tools, using a new disposable output directory:
 
 ```bash
 python scripts/check-pdf-compatibility.py /private/tmp/margin-maker-compatibility
+pdftotext /private/tmp/margin-maker-compatibility/actualtext.pdf -
+pdftotext /private/tmp/margin-maker-compatibility/actualtext-Portrait.pdf -
 ```
 
 `--font` accepts a local Unicode TrueType font if the standard Mac Arial Unicode
@@ -127,13 +131,12 @@ compares Poppler/pypdf extraction, checks both page orientations, and writes a
 JSON report plus bare-Quartz controls. It exits **2** for the known ActualText
 loss, **1** for unexpected failures, and **0** only if all checks including
 ActualText preservation pass. No PDF/font data or validation tool is bundled
-in the app.
-
-This run's synthetic evidence and logs are under
-`/private/tmp/margin-maker-030-rc-jpy34ud0`; native fixtures are in
-`fixtures-debug` and `fixtures-release`, and the reproducible report is
-`independent/report.json`. Raw framework control files intentionally retain the
-known defects; the clean-export count above excludes those controls.
+in the app. The first command intentionally returns 2 for the accepted limitation;
+the following commands show input `academic text` becoming output `XXXXX`.
+Choose another output directory if it already exists. `report.json` records the
+results. Raw framework controls intentionally retain the known defects; the
+clean-export counts exclude those controls. Test instructions and current
+verification results are in [TESTING.md](TESTING.md).
 
 ## Subsequent safeguard feasibility investigation
 
@@ -142,7 +145,7 @@ native rejection check. Parsed object/stream probes detected the obvious cases,
 but resource-context and decoder-completeness counterexamples prevented treating
 negative scans as proof of safety. No partial detector was integrated and no
 safeguard QA package was created. The application remains identical to the
-`0e31d56b` candidate, with the same ActualText limitation and public-release hold.
+`0e31d56b` engine, with the same accepted ActualText limitation.
 See [ACTUALTEXT_SAFEGUARD.md](ACTUALTEXT_SAFEGUARD.md) for evidence, qualifications
 and alternatives; this conclusion does not assert that a fuller detector is
 impossible.
