@@ -60,6 +60,40 @@ and personal PDFs are not committed. INSTALL_0.3.0.md preserves the pre-existing
 published v0.3.0 installation record byte-for-byte; RELEASE_CHECKLIST.md and
 PUBLICATION_AUDIT.md remain unchanged.
 
+## Independent final recheck
+
+The existing package and GitHub drafts were audited again on November 4, 2026.
+The approval ZIP above is unchanged; its local checksum, byte count, and GitHub
+draft asset digest agree. PR #1 remains draft and the v0.4.0 release remains
+unpublished. No v0.4.0 Git tag exists.
+
+- Fresh runs passed 78 debug tests, 78 release tests, and eight Python tests.
+  All 42 retained native PDFs pass qpdf. The compatibility tool again produced
+  six clean exports and expected status 2 for the disclosed ActualText loss.
+- A new production build in `build/v0.4.0-production-recheck/` passes metadata,
+  arm64 architecture, macOS 13 minimum, and strict ad-hoc signature checks.
+  Its packaged documents, plist, icon, and file-backed executable code/data
+  sections match the approval package. Relinking changes object timestamps,
+  the Mach-O UUID, and signature bytes; this diagnostic rebuild does not replace
+  the approval ZIP or either existing draft asset.
+- A fresh extraction of the approval ZIP launched with v0.4.0 (5) and the
+  documented defaults. Nonzero offsets, two-decimal normalization, range and
+  precision errors, nonnumeric input, blank recovery, scale-dependent limits,
+  Portrait/Landscape, and actionable locked/invalid-PDF errors passed live checks.
+- The save-panel export contains four Portrait Letter pages in order and passes
+  qpdf and pypdf/Poppler text checks. These checks ignore reader-inferred
+  whitespace, which can differ after scaling/rotation; all non-whitespace text
+  characters are preserved. The source SHA-256 is unchanged, representative
+  renders were inspected, and the extracted app still passes strict signing checks.
+- Checksums of all 27 pre-existing app executables and ZIPs in the build tree
+  are unchanged. Historical v0.3.0 records and archived installation instructions
+  remain preserved. Runtime/engine source still matches 832272a.
+
+Fresh logs, synthetic fixtures, identity checks, payload comparisons, GUI export
+results, and preservation records are in
+`/private/tmp/mm-040-release-recheck-20261104/`. Only this approval record changes
+after packaging; the packaged documents still match their repository versions.
+
 ## Final manual checks and approval
 
 1. Use this exact ZIP. Extract outside synced storage without replacing an
