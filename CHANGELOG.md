@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.4.0 - unreleased development
+## 0.4.0 - final release candidate, publication approval pending
 
 - Add numeric horizontal/vertical edge offsets in inches, defaulting to zero,
   with symmetric insets and the existing nine anchors and page scopes.
@@ -16,8 +16,15 @@
   precision. Remove range hover tooltips while retaining visible ranges,
   keyboard navigation, and VoiceOver guidance. Keep full PDF geometry precision.
 - Add geometry, rendered PDF, text, preview/export, input, scope, and version tests.
+- Finalize production identity as Margin Maker / local.marginmaker.app, version
+  0.4.0, build 5 (following production build 4), Release channel. The footer reads
+  v0.4.0 (5). No Development label is included in the production package.
+- Document the unchanged ActualText/annotation limitations, ad-hoc signing,
+  verified Apple Silicon/macOS configuration, and unverified configurations.
 
-No release or tag has been created. v0.2.0 and v0.3.0 remain unchanged.
+Publication remains subject to final package approval. No v0.4.0 tag or public
+release has been created. v0.2.0 and v0.3.0 remain unchanged. See
+RELEASE_NOTES_0.4.0.md and NEXT_STEPS.md.
 
 ## 0.3.0 - 2026-11-04
 

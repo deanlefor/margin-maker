@@ -1,5 +1,11 @@
 # Review the next Margin Maker version
 
+**Historical development record.** The final v0.4.0 candidate now uses production
+identity, Release channel, build 5, and footer v0.4.0 (5). The Dev identities and
+builds described below are historical review packages, not the production ZIP.
+This record is retained in source and is not bundled with the release candidate.
+See RELEASE_0.4.0.md, RELEASE_NOTES_0.4.0.md, and NEXT_STEPS.md for current status.
+
 Work is isolated on `codex/margin-maker-v2`, based on main `45417d1`. The checkout
 was clean before branching. Main and the existing tags have not moved. Local
 development commits on this branch are authorized. Pushing, merging, creating a

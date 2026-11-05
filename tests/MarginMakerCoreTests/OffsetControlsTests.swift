@@ -390,16 +390,19 @@ struct AppVersionTests {
         #expect(AppVersion(info: ["CFBundleShortVersionString": ""]).label == "Unbundled development build")
     }
 
-    @Test func testPackagingMetadataIdentifiesSeparateDevelopmentApp() throws {
+    @Test func testPackagingMetadataIdentifiesProductionRelease() throws {
         let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
         let data = try Data(contentsOf: root.appendingPathComponent("Packaging/Info.plist"))
         let info = try unwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
-        #expect(info["MarginMakerBuildChannel"] as? String == "Development")
-        #expect(info["CFBundleIdentifier"] as? String == "local.marginmaker.development")
-        #expect(info["CFBundleName"] as? String == "Margin Maker Dev")
+        #expect(info["MarginMakerBuildChannel"] as? String == "Release")
+        #expect(info["CFBundleIdentifier"] as? String == "local.marginmaker.app")
+        #expect(info["CFBundleName"] as? String == "Margin Maker")
+        #expect(info["CFBundleDisplayName"] as? String == "Margin Maker")
         let version = try unwrap(info["CFBundleShortVersionString"] as? String)
         let build = try unwrap(info["CFBundleVersion"] as? String)
-        #expect(AppVersion(info: info).label == "v\(version) · Development (\(build))")
+        #expect((Int(build) ?? 0) > 4)
+        #expect(AppVersion(info: info).label == "v\(version) (\(build))")
+        #expect(!AppVersion(info: info).label.contains("Development"))
     }
 }
