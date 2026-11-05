@@ -67,16 +67,51 @@ unchanged archive's historical documentation.
 The exported PDF has one Letter page per original page, in the original order.
 The imported source is protected from replacement. Keep it for reference.
 
+### Development version: edge offsets and version display
+
+On `codex/margin-maker-v2`, **Horizontal** and **Vertical** edge offsets accept
+numeric inches in 0.01-inch increments (for example, 0.25, 0.50, or 0.75).
+Both default to 0.00. They inset
+opposite edges equally: left/right and top/bottom anchors move inward by the
+chosen amount, while centered axes remain centered. Offsets follow **All pages**
+or **This page**, just like scale and position, and update the preview as you type.
+Click or Tab into a field to select its current value; subsequent clicks allow
+ordinary cursor editing. A blank draft is allowed while editing and restores the
+last valid value when you leave the field (or zero if that value no longer fits).
+Each field shows its allowed range for the selected scope and scale. Limits
+update with source dimensions, crops/rotation, output orientation, and scale.
+Completed inputs and ranges use two decimal places. Maximum values round down
+to the nearest hundredth; extra decimal places are rejected with a clear message
+instead of silently rounded. Input formatting occurs on blur so decimal typing
+stays straightforward. The ranges stay visible beneath the fields; there are no
+hover tooltips. Keyboard navigation and VoiceOver labels/range guidance remain
+available. PDF placement calculations retain full precision.
+
+Scale always means the same proportional fit to the full Letter page. If the
+scaled reading cannot fit inside the inset area, a warning identifies the first
+affected page and export is disabled. Reduce an offset or explicitly choose a
+smaller scale. Invalid numeric input also blocks export and reports the allowed
+range. An unfinished blank draft keeps the last valid preview and waits for blur
+to restore the value before export. The current preview is
+cleared when its settings are invalid, so it cannot show an obsolete placement.
+
+The footer shows the packaged version, build, and development channel. This
+branch builds a separate **Margin Maker Dev.app**, with its own bundle identity,
+for the proposed 0.4.0 version. It is unreleased. The published v0.3.0 download
+above and all historical tags remain available. See [development review](DEVELOPMENT.md).
+
 ## Build from source
 
 Use a Mac with **Swift 6.0 or later**, supplied by Xcode or Apple's Command Line
 Tools. From the repository directory:
 
 ```bash
-bash scripts/build-app.sh release build/personal-0.3.0
+bash scripts/build-app.sh release build/v2-review
 ```
 
-This creates **Margin Maker.app** and **Margin Maker.zip** in that directory.
+This development branch creates **Margin Maker Dev.app** and **Margin Maker Dev.zip**
+in that directory. To build the historical release, use a separate checkout of
+`v0.3.0` and its original build instructions.
 Choose a fresh output directory: the script refuses to overwrite an app or ZIP.
 Use `debug` instead of `release` for a development build. Extract the ZIP outside
 iCloud or other synced storage before opening the app. See [INSTALL.md](INSTALL.md).

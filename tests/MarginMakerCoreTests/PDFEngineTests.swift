@@ -113,6 +113,143 @@ struct PDFEngineTests {
         assertRect(try coloredBounds(raster(export(fixture(), layout: layout))), placement)
     }
 
+    @Test func testZeroOffsetsReproduceOriginalPlacementExactly() throws {
+        for orientation in PageOrientation.allCases {
+            let canvas = orientation.pageSize
+            for size in [PageLayout.letter, CGSize(width: 1000, height: 500), CGSize(width: 200, height: 300)] {
+                for scale in [50, 75, 100] {
+                    let factor = min(canvas.width / size.width, canvas.height / size.height) * Double(scale) / 100
+                    let width = size.width * factor, height = size.height * factor
+                    for horizontal in HorizontalAnchor.allCases {
+                        for vertical in VerticalAnchor.allCases {
+                            let layout = PageLayout(scalePercent: scale, horizontal: horizontal, vertical: vertical)
+                            let original = CGRect(x: (canvas.width - width) * Double(horizontal.rawValue) / 2,
+                                                  y: (canvas.height - height) * Double(2 - vertical.rawValue) / 2,
+                                                  width: width, height: height)
+                            expectEqual(try layout.placement(for: size, orientation: orientation), original)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func testOffsetsAtAllNineAnchorsKeepScaleAndCenteredAxes() throws {
+        for orientation in PageOrientation.allCases {
+            let canvas = orientation.pageSize
+            let input = try fixture(sizes: [canvas])
+            for scale in [50, 75] {
+                for horizontal in HorizontalAnchor.allCases {
+                    for vertical in VerticalAnchor.allCases {
+                        let layout = PageLayout(scalePercent: scale, horizontal: horizontal, vertical: vertical,
+                                                horizontalOffsetInches: 0.5, verticalOffsetInches: 0.75)
+                        let width = canvas.width * Double(scale) / 100
+                        let height = canvas.height * Double(scale) / 100
+                        let x: Double = switch horizontal {
+                        case .left: 36
+                        case .center: (canvas.width - width) / 2
+                        case .right: canvas.width - width - 36
+                        }
+                        let y: Double = switch vertical {
+                        case .top: canvas.height - height - 54
+                        case .middle: (canvas.height - height) / 2
+                        case .bottom: 54
+                        }
+                        let expected = CGRect(x: x, y: y, width: width, height: height)
+                        assertRect(try layout.placement(for: canvas, orientation: orientation), expected, accuracy: 0.000001)
+                        assertRenderedEdges(try coloredBounds(raster(export(input, layout: layout, orientation: orientation))), expected)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func testOffsetsRejectInvalidOrImpossibleFitsWithoutChangingScale() throws {
+        for value in [-0.25, .nan, .infinity, -.infinity] {
+            for layout in [PageLayout(horizontalOffsetInches: value), PageLayout(verticalOffsetInches: value)] {
+                expectThrows(try layout.placement(for: PageLayout.letter)) {
+                    expectEqual($0 as? PDFError, .invalidOffsets)
+                }
+            }
+        }
+        for horizontal in HorizontalAnchor.allCases {
+            for vertical in VerticalAnchor.allCases {
+                let layout = PageLayout(scalePercent: 100, horizontal: horizontal, vertical: vertical,
+                                        horizontalOffsetInches: 0.01)
+                expectThrows(try export(fixture(), layout: layout)) {
+                    expectEqual($0 as? PDFError, .offsetsDoNotFit)
+                }
+                expectEqual(layout.scalePercent, 100)
+            }
+        }
+        for value in [1.062501, Double.greatestFiniteMagnitude] {
+            expectThrows(try PageLayout(horizontalOffsetInches: value).placement(for: PageLayout.letter)) {
+                expectEqual($0 as? PDFError, .offsetsDoNotFit)
+            }
+        }
+        // Exactly exhausted inset space is valid and must not adjust scale.
+        assertRect(try PageLayout(horizontalOffsetInches: 1.0625, verticalOffsetInches: 1.375)
+            .placement(for: PageLayout.letter), CGRect(x: 76.5, y: 99, width: 459, height: 594), accuracy: 0.000001)
+    }
+
+    @Test func testOffsetsWithCropsAndRotationsPreserveVisibleContent() throws {
+        let crop = CGRect(x: 30, y: 40, width: 200, height: 300)
+        for angle in [0, 90, 180, 270] {
+            let input = try fixture(crop: crop, rotation: angle)
+            let source = try PDFSource(data: input)
+            let marker: CGRect = switch angle {
+            case 90: CGRect(x: 10, y: 170, width: 30, height: 20)
+            case 180: CGRect(x: 170, y: 260, width: 20, height: 30)
+            case 270: CGRect(x: 260, y: 10, width: 30, height: 20)
+            default: CGRect(x: 10, y: 10, width: 20, height: 30)
+            }
+            for orientation in PageOrientation.allCases {
+                let layout = PageLayout(horizontal: .right, vertical: .top,
+                                        horizontalOffsetInches: 0.25, verticalOffsetInches: 0.5)
+                let placement = try layout.placement(for: source.visiblePageSizes[0], orientation: orientation)
+                let image = try raster(export(input, layout: layout, orientation: orientation))
+                assertRenderedEdges(try coloredBounds(image), placement)
+                let factor = placement.width / source.visiblePageSizes[0].width
+                assertRect(try coloredBounds(image, red: true),
+                           CGRect(x: placement.minX + marker.minX * factor, y: placement.minY + marker.minY * factor,
+                                  width: marker.width * factor, height: marker.height * factor), accuracy: 1.5)
+                expectEqual(source.data, input)
+            }
+        }
+    }
+
+    @Test func testOffsetMultipageExportMatchesPreviewsAndPreservesText() throws {
+        let input = try fixture(sizes: [PageLayout.letter, CGSize(width: 595, height: 842), CGSize(width: 1000, height: 500)])
+        let source = try PDFSource(data: input)
+        let layouts = [PageLayout(scalePercent: 50, horizontal: .left, vertical: .top,
+                                  horizontalOffsetInches: 0.75, verticalOffsetInches: 0.5),
+                       PageLayout(horizontal: .right, vertical: .bottom,
+                                  horizontalOffsetInches: 0.25, verticalOffsetInches: 0.75),
+                       PageLayout(horizontalOffsetInches: 0.5, verticalOffsetInches: 0.5)]
+        for orientation in PageOrientation.allCases {
+            let result = try PDFExporter.export(source: source, layouts: layouts, orientation: orientation)
+            let document = try unwrap(PDFDocument(data: result))
+            expectEqual(document.pageCount, 3)
+            for index in 0..<3 {
+                let page = try unwrap(document.page(at: index))
+                expectEqual(page.bounds(for: .mediaBox).size, orientation.pageSize)
+                expectTrue(page.string?.contains("PAGE \(index + 1): selectable academic text") == true)
+                let preview = try PDFExporter.export(source: source, layouts: layouts, orientation: orientation, pageIndices: [index])
+                let fullImage = try raster(result, pageIndex: index), previewImage = try raster(preview)
+                expectEqual(Data(bytes: try unwrap(fullImage.data), count: fullImage.bytesPerRow * fullImage.height),
+                            Data(bytes: try unwrap(previewImage.data), count: previewImage.bytesPerRow * previewImage.height))
+                assertRenderedEdges(try coloredBounds(fullImage),
+                                    try layouts[index].placement(for: source.visiblePageSizes[index], orientation: orientation))
+            }
+            if let folder = ProcessInfo.processInfo.environment["MARGIN_MAKER_TEST_OUTPUT"] {
+                let directory = URL(fileURLWithPath: folder)
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try result.write(to: directory.appendingPathComponent("offsets-\(orientation.rawValue).pdf"))
+            }
+        }
+        expectEqual(source.data, input)
+    }
+
     @Test func testAllNineAnchorsInGeometryAndRenderedOutput() throws {
         for orientation in PageOrientation.allCases {
             let canvas = orientation.pageSize

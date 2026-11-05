@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.4.0 - unreleased development
+
+- Add numeric horizontal/vertical edge offsets in inches, defaulting to zero,
+  with symmetric insets and the existing nine anchors and page scopes.
+- Preserve the selected scale; warn and block export when offsets cannot fit.
+  Validate all pages, clear invalid previews, and reject invalid numeric input.
+- Display version/build/channel from the app bundle in the footer. Keep metadata
+  in Packaging/Info.plist and give development packages a separate name/identity.
+- Development build 2: select the existing numeric value on initial focus, allow
+  normal cursor editing afterward, restore blank fields on blur, and show dynamic
+  inch ranges with specific validation limits. Keep PDF placement unchanged.
+- Development build 3: format completed offsets, ranges, and validation limits to
+  two decimals; round maxima down to valid hundredths and reject excess input
+  precision. Remove range hover tooltips while retaining visible ranges,
+  keyboard navigation, and VoiceOver guidance. Keep full PDF geometry precision.
+- Add geometry, rendered PDF, text, preview/export, input, scope, and version tests.
+
+No release or tag has been created. v0.2.0 and v0.3.0 remain unchanged.
+
 ## 0.3.0 - 2026-11-04
 
 Changes since the accepted v0.2.0 baseline:

@@ -64,73 +64,103 @@ struct ContentView: View {
     }
 
     private var controls: some View {
-        VStack(alignment: .leading, spacing: 28) {
-            VStack(alignment: .leading, spacing: 7) {
-                Label("Room to think.", systemImage: "rectangle.inset.filled.trailinghalf")
-                    .font(.system(size: 19, weight: .semibold))
-                Text("Make space for your notes.")
-                    .font(.subheadline).foregroundStyle(.secondary)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Apply changes to").font(.headline)
-                Picker(selection: Binding(get: { model.scope }, set: { model.setScope($0) })) {
-                    ForEach(EditScope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                } label: {
-                    EmptyView()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 7) {
+                    Label("Room to think.", systemImage: "rectangle.inset.filled.trailinghalf")
+                        .font(.system(size: 19, weight: .semibold))
+                    Text("Make space for your notes.")
+                        .font(.subheadline).foregroundStyle(.secondary)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .accessibilityLabel("Apply changes to")
-                Text(model.scope == .allPages
-                     ? "Your next adjustment applies to every page."
-                     : "Adjust this page. Other pages keep their settings.")
-                    .font(.caption).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Position").font(.headline)
-                VStack(spacing: 7) {
-                    ForEach(VerticalAnchor.allCases, id: \.self) { vertical in
-                        HStack(spacing: 7) {
-                            ForEach(HorizontalAnchor.allCases, id: \.self) { horizontal in
-                                anchorButton(horizontal, vertical)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Apply changes to").font(.headline)
+                    Picker(selection: Binding(get: { model.scope }, set: { model.setScope($0) })) {
+                        ForEach(EditScope.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+                    } label: {
+                        EmptyView()
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .accessibilityLabel("Apply changes to")
+                    Text(model.scope == .allPages
+                         ? "Your next adjustment applies to every page."
+                         : "Adjust this page. Other pages keep their settings.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Position").font(.headline)
+                    VStack(spacing: 7) {
+                        ForEach(VerticalAnchor.allCases, id: \.self) { vertical in
+                            HStack(spacing: 7) {
+                                ForEach(HorizontalAnchor.allCases, id: \.self) { horizontal in
+                                    anchorButton(horizontal, vertical)
+                                }
                             }
                         }
                     }
+                    Text("Leave a margin where you need it.")
+                        .font(.caption).foregroundStyle(.secondary)
                 }
-                Text("Leave a margin where you need it.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                HStack {
-                    Text("Scale").font(.headline)
-                    Spacer()
-                    Text("\(model.layout.scalePercent)%")
-                        .font(.system(.body, design: .rounded).weight(.semibold))
-                        .monospacedDigit()
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text("Scale").font(.headline)
+                        Spacer()
+                        Text("\(model.layout.scalePercent)%")
+                            .font(.system(.body, design: .rounded).weight(.semibold))
+                            .monospacedDigit()
+                    }
+                    Slider(value: Binding(get: { Double(model.layout.scalePercent) }, set: { model.setScale($0) }),
+                           in: 50...100, step: 1)
+                        .accessibilityLabel("Scale")
+                        .accessibilityValue("\(model.layout.scalePercent) percent")
+                    HStack {
+                        Text("50%")
+                        Spacer()
+                        Text("100% · Fit to Letter")
+                    }.font(.caption).foregroundStyle(.secondary)
                 }
-                Slider(value: Binding(get: { Double(model.layout.scalePercent) }, set: { model.setScale($0) }),
-                       in: 50...100, step: 1)
-                    .accessibilityLabel("Scale")
-                    .accessibilityValue("\(model.layout.scalePercent) percent")
-                HStack {
-                    Text("50%")
-                    Spacer()
-                    Text("100% · Fit to Letter")
-                }.font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Edge offsets").font(.headline)
+                    offsetField(.horizontal, text: Binding(get: { model.horizontalOffsetText },
+                                                           set: { model.setHorizontalOffsetText($0) }))
+                    offsetField(.vertical, text: Binding(get: { model.verticalOffsetText },
+                                                         set: { model.setVerticalOffsetText($0) }))
+                    Text("Limits for \(model.scope.rawValue.lowercased()) at \(model.layout.scalePercent)%.")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Text("Insets on both sides. Centered pages stay centered; scale stays unchanged.")
+                        .font(.caption).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("On your Mac. Only.", systemImage: "lock.shield")
+                        .font(.caption.weight(.medium))
+                    Text("No uploads. No accounts.\nYour original stays untouched.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
             }
-            Spacer(minLength: 8)
-            VStack(alignment: .leading, spacing: 8) {
-                Label("On your Mac. Only.", systemImage: "lock.shield")
-                    .font(.caption.weight(.medium))
-                Text("No uploads. No accounts.\nYour original stays untouched.")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
+            .padding(24)
         }
-        .padding(24)
         .frame(width: 256)
         .background(.regularMaterial)
         .disabled(model.source == nil || model.isBusy)
+    }
+
+    private func offsetField(_ axis: OffsetAxis, text: Binding<String>) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(axis.label).font(.callout)
+                Spacer(minLength: 0)
+                OffsetTextField(text: text, label: "\(axis.label) edge offset in inches",
+                                accessibilityHelp: "Allowed: \(model.offsetRangeDescription(axis)) for \(model.scope.rawValue.lowercased()) at \(model.layout.scalePercent)%. Use increments of 0.01 inches, with at most two decimal places.",
+                                onEndEditing: { model.finishEditingOffset(axis) })
+                    .frame(width: 64, height: 22)
+                Text("in").font(.caption).foregroundStyle(.secondary)
+            }
+            Text("Allowed: \(model.offsetRangeDescription(axis))")
+                .font(.caption).foregroundStyle(.secondary)
+        }
     }
 
     private func anchorButton(_ horizontal: HorizontalAnchor, _ vertical: VerticalAnchor) -> some View {
@@ -195,8 +225,22 @@ struct ContentView: View {
             .font(.caption).foregroundStyle(.secondary)
             .padding(.horizontal, 24).padding(.vertical, 15)
 
+            if let warning = model.layoutWarning, model.source != nil {
+                Label(warning, systemImage: "exclamationmark.triangle")
+                    .font(.callout)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                    .padding(.horizontal, 24).padding(.bottom, 12)
+                    .accessibilityLabel("Export unavailable. \(warning)")
+            }
+
             ZStack {
-                if model.source != nil {
+                if model.source != nil, model.previewWarning != nil {
+                    Text("Preview unavailable for these settings.")
+                        .foregroundStyle(.secondary)
+                } else if model.source != nil {
                     PDFPreview(document: model.preview)
                         .padding(.horizontal, 24)
                         .padding(.bottom, 16)
@@ -266,20 +310,30 @@ struct ContentView: View {
                     .disabled(!model.canGoForward).help("Next page (⌘])")
                     .accessibilityLabel("Next page")
                 Spacer()
-                if let url = model.exportedURL {
-                    Menu {
-                        Button("Open Exported PDF") { NSWorkspace.shared.open(url) }
-                        Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
-                    } label: { Label("PDF exported", systemImage: "checkmark.circle.fill") }
-                        .menuStyle(.borderlessButton).fixedSize()
-                        .help(url.path)
-                } else {
-                    Text("Preview matches export").font(.caption).foregroundStyle(.secondary)
+                VStack(alignment: .trailing, spacing: 3) {
+                    if let url = model.exportedURL {
+                        Menu {
+                            Button("Open Exported PDF") { NSWorkspace.shared.open(url) }
+                            Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
+                        } label: { Label("PDF exported", systemImage: "checkmark.circle.fill") }
+                            .menuStyle(.borderlessButton).fixedSize()
+                            .help(url.path)
+                    } else {
+                        Text(model.layoutWarning == nil ? "Preview matches export" : "Adjust settings to export")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    Text(AppVersion.current.label)
+                        .font(.caption2).foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                        .accessibilityLabel("Application version: \(AppVersion.current.label)")
                 }
             } else {
                 Text("A fresh page for every page of your reading.")
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
+                Text(AppVersion.current.label)
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .textSelection(.enabled)
             }
         }
         .padding(.horizontal, 24).frame(height: 54)
