@@ -1,77 +1,72 @@
-# Install Margin Maker v0.3.0
+# Install Margin Maker v0.4.0
 
-[Download the Apple Silicon application ZIP](https://github.com/deanlefor/margin-maker/releases/download/v0.3.0/Margin.Maker.0.3.0.macOS.Apple.Silicon.zip)
-from the [public v0.3.0 release](https://github.com/deanlefor/margin-maker/releases/tag/v0.3.0).
-No build tools are required for this download.
+This package contains **Margin Maker 0.4.0, build 5**, using the production name
+**Margin Maker.app**, identifier `local.marginmaker.app`, and Release channel.
+The footer reads **v0.4.0 (5)**. Final publication approval is pending; the app is
+not a development-identity build. No build tools are needed to run the packaged app.
 
-The app is version **0.3.0**, build **4**, bundle identifier `local.marginmaker.app`.
-The ZIP contains only **Apple Silicon (arm64)** code. Local testing covers Apple
-Silicon on macOS 27.0.1; **macOS 13 and Intel compatibility remain unverified**.
-Clean installation on another Mac also remains unverified.
+The ZIP contains only **Apple Silicon (arm64)** code. Tested locally on macOS
+27.0.1. The declared minimum is macOS 13, but macOS 13 and Intel compatibility
+remain unverified; Intel code is not included. Installation on another Mac is
+also unverified.
 
-**Read before converting:** Certain PDFs using `/ActualText` lose replacement-text
-information, which can affect copying, searching, and accessibility even when
-the output looks correct. Not all PDF structures are preserved. Existing
-annotations are not guaranteed to survive: add margins before annotating.
-Original source documents are protected from replacement. Keep the originals.
-See [COMPATIBILITY.md](COMPATIBILITY.md) for evidence and reproduction steps.
+## Open the candidate safely
 
-## Download and launch
+1. Verify the ZIP's SHA-256 against the approval record or release notes supplied
+   alongside it. For a published download, use the checksum on its GitHub release.
+2. Double-click the ZIP in Finder to extract it into a **fresh folder outside
+   iCloud or other synced storage**. Do not extract over an existing application.
+3. Open **Margin Maker.app** from that folder. This candidate has the same bundle
+   identifier as the production v0.3.0 app. If an older production copy is running,
+   quit it yourself first so macOS launches the intended extracted copy. Existing
+   app files and release ZIPs must remain in their current locations during review.
+4. Confirm **v0.4.0 (5)** in the footer before testing.
+5. Open a disposable PDF. Defaults are Portrait, All pages, 75%, middle-center,
+   and 0.00-inch horizontal/vertical offsets. Try offsets such as 0.25 or 0.50,
+   check the ranges, and export a new PDF. Add annotations to the exported copy.
 
-1. Download the application ZIP using the link above. In the release's **Assets**
-   list, its label is **Margin Maker 0.3.0 macOS Apple Silicon.zip**; GitHub serves
-   it as `Margin.Maker.0.3.0.macOS.Apple.Silicon.zip`. The source-code ZIP and tarball
-   are for building from source.
-2. Double-click the downloaded ZIP in Finder to extract it outside iCloud or
-   another synced folder.
-3. Open **Margin Maker.app** from the extracted folder. Keep it separate from
-   older copies so you launch this version. You may copy it to Applications when
-   you choose to replace your own installed version.
-4. If macOS displays a security warning, read the guidance below before proceeding.
-5. Click **Open PDF**, press Command-O, or drop a PDF from Finder onto the window.
-   Choose Portrait or Landscape, one of nine positions, and a scale from 50% to 100%.
-   Apply settings to all pages or customize individual pages, then export a new PDF.
-   Add highlights and handwriting to that exported copy afterward.
-
-The downloadable ZIP is the previously verified final archive, unchanged. Its
-bundled documents retain historical personal-use/source-build wording; these
-instructions describe the prebuilt public release. The app installs no services
-and does not change your default PDF application.
+This app installs no services and does not change your default PDF application.
+Do not replace an installed copy until the final package is approved.
 
 ## macOS security warnings
 
-This build is **ad-hoc signed**, without Developer ID signing or **Apple
-notarization**, so macOS may display security warnings. If you trust the download
-and choose to proceed, follow [Apple's official guidance for opening apps from
-unidentified developers](https://support.apple.com/en-us/102445):
+The app is **ad-hoc signed**, without Developer ID signing or Apple notarization.
+macOS may display security warnings. If you trust the package and choose to
+proceed, follow [Apple's guidance for opening apps from unidentified developers](https://support.apple.com/en-us/102445):
+after attempting to open it, use **System Settings > Privacy & Security > Open
+Anyway** for this application when offered, then confirm Open. This is an
+application-specific exception; do not disable macOS protections globally.
 
-1. First attempt to open **Margin Maker.app**.
-2. Open **System Settings → Privacy & Security**, scroll down, and select
-   **Open Anyway** for Margin Maker when offered.
-3. Confirm **Open** when the warning prompt reappears.
+## Verify the ZIP
 
-These steps create an exception for this application. Do not disable macOS
-security protections globally.
-
-## Verify the download
-
-The application ZIP is **2,179,751 bytes**. Its SHA-256 checksum is:
-
-```text
-43c50baec087bd47f04ad401ee3a9bf1edfda4f2d61d1b6ada3463d41fa14bbc
-```
-
-To check it in Terminal, run this command from the folder containing the download
-and compare its output with the checksum above:
+The final byte count and SHA-256 are recorded outside the archive in its release
+approval record, release notes, and SHA256SUMS.txt. Keeping the checksum outside
+its own ZIP avoids changing the bytes being verified. From the download folder:
 
 ```bash
-shasum -a 256 "Margin.Maker.0.3.0.macOS.Apple.Silicon.zip"
+shasum -a 256 "Margin.Maker.0.4.0.macOS.Apple.Silicon.zip"
 ```
 
-## Build from source instead
+Compare the output with the supplied checksum before opening the app.
 
-Follow [Build from source in README.md](README.md#build-from-source). Local builds
-produce **Margin Maker.app** and **Margin Maker.zip**; extract that ZIP outside
-synced storage and follow the launch instructions above. The build uses the
-current Mac's architecture and does not establish compatibility with untested
-Macs or macOS versions. Source code is available under the [MIT license](LICENSE).
+## PDF compatibility
+
+Certain PDFs using **/ActualText** lose replacement-text semantics, affecting
+copying, searching, and accessibility even if their appearance is correct.
+Ordinary vector text and conventional invisible OCR layers pass the tested
+fixtures; not all PDF structures are preserved. Keep your original PDFs.
+Existing annotations are not guaranteed to survive conversion; prepare margins
+before annotating. Links, forms, outlines, signatures, and accessible structure
+are not migrated. See [COMPATIBILITY.md](COMPATIBILITY.md).
+
+The final manual check is to export a disposable reading, open it in PDF Expert,
+highlight text, handwrite in the margin, save, close, and reopen. Confirm the
+annotations/text remain usable and the original source is unchanged.
+
+## Existing v0.3.0 download
+
+The [v0.3.0 release](https://github.com/deanlefor/margin-maker/releases/tag/v0.3.0)
+and [original Apple Silicon ZIP](https://github.com/deanlefor/margin-maker/releases/download/v0.3.0/Margin.Maker.0.3.0.macOS.Apple.Silicon.zip)
+remain available unchanged. Its archived installation instructions are preserved
+in the source repository as INSTALL_0.3.0.md. Do not use the v0.3.0 checksum to
+verify the new v0.4.0 ZIP.

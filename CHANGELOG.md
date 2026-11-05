@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.4.0 - final release candidate, publication approval pending
+
+- Add numeric horizontal/vertical edge offsets in inches, defaulting to zero,
+  with symmetric insets and the existing nine anchors and page scopes.
+- Preserve the selected scale; warn and block export when offsets cannot fit.
+  Validate all pages, clear invalid previews, and reject invalid numeric input.
+- Display version/build/channel from the app bundle in the footer. Keep metadata
+  in Packaging/Info.plist and give development packages a separate name/identity.
+- Development build 2: select the existing numeric value on initial focus, allow
+  normal cursor editing afterward, restore blank fields on blur, and show dynamic
+  inch ranges with specific validation limits. Keep PDF placement unchanged.
+- Development build 3: format completed offsets, ranges, and validation limits to
+  two decimals; round maxima down to valid hundredths and reject excess input
+  precision. Remove range hover tooltips while retaining visible ranges,
+  keyboard navigation, and VoiceOver guidance. Keep full PDF geometry precision.
+- Add geometry, rendered PDF, text, preview/export, input, scope, and version tests.
+- Finalize production identity as Margin Maker / local.marginmaker.app, version
+  0.4.0, build 5 (following production build 4), Release channel. The footer reads
+  v0.4.0 (5). No Development label is included in the production package.
+- Document the unchanged ActualText/annotation limitations, ad-hoc signing,
+  verified Apple Silicon/macOS configuration, and unverified configurations.
+
+Publication remains subject to final package approval. No v0.4.0 tag or public
+release has been created. v0.2.0 and v0.3.0 remain unchanged. See
+RELEASE_NOTES_0.4.0.md and NEXT_STEPS.md.
+
 ## 0.3.0 - 2026-11-04
 
 Changes since the accepted v0.2.0 baseline:

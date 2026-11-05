@@ -10,8 +10,8 @@ fi
 
 # Paired overrides produce a separately identifiable QA bundle without editing
 # the regular application's metadata or replacing an earlier package.
-app_name="${MARGIN_MAKER_APP_NAME:-Margin Maker}"
-bundle_id="${MARGIN_MAKER_BUNDLE_ID:-local.marginmaker.app}"
+app_name="${MARGIN_MAKER_APP_NAME:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleName' Packaging/Info.plist)}"
+bundle_id="${MARGIN_MAKER_BUNDLE_ID:-$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' Packaging/Info.plist)}"
 if [[ -n "${MARGIN_MAKER_APP_NAME:-}" || -n "${MARGIN_MAKER_BUNDLE_ID:-}" ]]; then
     if [[ -z "${MARGIN_MAKER_APP_NAME:-}" || -z "${MARGIN_MAKER_BUNDLE_ID:-}" ]]; then
         echo "Set both MARGIN_MAKER_APP_NAME and MARGIN_MAKER_BUNDLE_ID for a QA build." >&2
@@ -60,7 +60,7 @@ xattr -dr com.apple.ResourceFork "$app" 2>/dev/null || true
 codesign --force --sign - "$app"
 codesign --verify --strict "$app"
 # Ship the known limitations and installation notes beside the signed bundle.
-for document in INSTALL.md CHANGELOG.md COMPATIBILITY.md ACTUALTEXT_SAFEGUARD.md TESTING.md LICENSE; do
+for document in README.md INSTALL.md CHANGELOG.md RELEASE_NOTES_0.4.0.md NEXT_STEPS.md CONTRIBUTING.md COMPATIBILITY.md ACTUALTEXT_SAFEGUARD.md TESTING.md LICENSE; do
     cp "$document" "$staging_dir/$document"
 done
 # A metadata-free archive remains intact when this checkout is in iCloud Drive.

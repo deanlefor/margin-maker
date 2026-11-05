@@ -5,6 +5,7 @@ import Darwin
 public enum PDFError: LocalizedError, Equatable {
     case emptyFile, invalidPDF, locked, noPages, invalidPage, invalidScale
     case layoutCount, invalidPageIndex, exportFailed, originalFile
+    case invalidOffsets, offsetsDoNotFit
 
     public var errorDescription: String? {
         switch self {
@@ -14,6 +15,8 @@ public enum PDFError: LocalizedError, Equatable {
         case .noPages: "This PDF has no pages. Choose a PDF containing at least one page."
         case .invalidPage: "A page has invalid dimensions or rotation. Export a fresh copy from your PDF editor and try again."
         case .invalidScale: "Choose a scale between 50% and 100%."
+        case .invalidOffsets: "Enter finite, nonnegative edge offsets in inches."
+        case .offsetsDoNotFit: "The scaled page does not fit inside these edge offsets. Reduce the offsets or choose a smaller scale. Scaling has not changed."
         case .layoutCount: "The page settings do not match this PDF. Reopen the PDF and try again."
         case .invalidPageIndex: "That page is outside this PDF."
         case .exportFailed: "The PDF could not be created. Choose another destination and try again."

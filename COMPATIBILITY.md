@@ -1,4 +1,22 @@
-# PDF compatibility: 0.3.0
+# PDF compatibility: v0.4.0
+
+The v0.4.0 candidate retains the known ActualText and annotation limitations
+described below. New edge offsets change page placement, not the PDF drawing or
+text-preservation pipeline. Ordinary multilingual vector text and conventional
+invisible OCR layers are verified with independent readers; ActualText loss is
+an expected disclosed failure, not a claim of lossless PDF conversion.
+
+The candidate uses production identity (0.4.0, build 5, Release channel) and is
+prepared for final public-release approval. It is ad-hoc signed, arm64 only, and
+not Apple-notarized. macOS 13, Intel compatibility, another-Mac installation, and
+the full PDF Expert handwriting/save/reopen workflow remain unverified.
+
+## Historical v0.3.0 investigation
+
+The investigation below is retained as recorded. Its references to source-only
+publication and the then-current engine describe v0.3.0, not the new package's
+release status. Current candidate verification is recorded in TESTING.md and
+RELEASE_0.4.0.md in the source repository.
 
 Investigated November 4, 2026 on Apple Silicon, macOS 27.0.1, Swift 6.2.3.
 The completed release preparation (`0e31d56`) and documentation-only safeguard

@@ -18,18 +18,27 @@ public struct PageLayout: Equatable, Sendable {
     public var scalePercent: Int
     public var horizontal: HorizontalAnchor
     public var vertical: VerticalAnchor
+    public var horizontalOffsetInches: Double
+    public var verticalOffsetInches: Double
 
     public init(scalePercent: Int = 75, horizontal: HorizontalAnchor = .center,
-                vertical: VerticalAnchor = .middle) {
+                vertical: VerticalAnchor = .middle, horizontalOffsetInches: Double = 0,
+                verticalOffsetInches: Double = 0) {
         self.scalePercent = scalePercent
         self.horizontal = horizontal
         self.vertical = vertical
+        self.horizontalOffsetInches = horizontalOffsetInches
+        self.verticalOffsetInches = verticalOffsetInches
     }
 
     /// PDF coordinates have their origin at the bottom left. Size is the visible,
     /// rotated crop box; 100% is the largest proportional fit on the chosen canvas.
     public func placement(for visibleSize: CGSize, orientation: PageOrientation = .portrait) throws -> CGRect {
         guard (50...100).contains(scalePercent) else { throw PDFError.invalidScale }
+        guard horizontalOffsetInches.isFinite, verticalOffsetInches.isFinite,
+              horizontalOffsetInches >= 0, verticalOffsetInches >= 0 else {
+            throw PDFError.invalidOffsets
+        }
         guard visibleSize.width.isFinite, visibleSize.height.isFinite,
               visibleSize.width > 0, visibleSize.height > 0 else {
             throw PDFError.invalidPage
@@ -38,8 +47,17 @@ public struct PageLayout: Equatable, Sendable {
         let factor = min(canvas.width / visibleSize.width,
                          canvas.height / visibleSize.height) * Double(scalePercent) / 100
         let size = CGSize(width: visibleSize.width * factor, height: visibleSize.height * factor)
-        let x = (canvas.width - size.width) * Double(horizontal.rawValue) / 2
-        let y = (canvas.height - size.height) * Double(2 - vertical.rawValue) / 2
+        let dx = horizontalOffsetInches * 72
+        let dy = verticalOffsetInches * 72
+        // Offsets reserve equal space at opposite edges. Fit is still calculated
+        // against the whole Letter canvas: never silently shrink the reading.
+        let remainingWidth = canvas.width - size.width - 2 * dx
+        let remainingHeight = canvas.height - size.height - 2 * dy
+        guard remainingWidth >= -0.000001, remainingHeight >= -0.000001 else {
+            throw PDFError.offsetsDoNotFit
+        }
+        let x = dx + remainingWidth * Double(horizontal.rawValue) / 2
+        let y = dy + remainingHeight * Double(2 - vertical.rawValue) / 2
         return CGRect(origin: CGPoint(x: x, y: y), size: size)
     }
 }

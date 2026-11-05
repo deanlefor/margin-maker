@@ -1,5 +1,24 @@
 # Testing
 
+## v0.4.0 production candidate
+
+The current candidate is **0.4.0, build 5, Release channel**, with production
+name Margin Maker and bundle identifier local.marginmaker.app. The footer reads
+v0.4.0 (5). Publication awaits final approval; this is not a Dev-identity package.
+
+On Apple Silicon, macOS 27.0.1 and Apple Swift 6.2.3, final preparation passed
+78 debug and 78 release native tests, plus eight Python reference tests. All
+42 retained native PDFs pass qpdf without warnings. New offset exports pass
+independent pypdf/Poppler size/order/text checks. The six independent compatibility
+exports pass structural and ordinary multilingual/OCR checks; expected status 2
+reproduces the known ActualText loss. The full PDF Expert highlight/handwriting/
+save/reopen workflow is a final manual check on the exact extracted candidate.
+
+macOS 13, Intel compatibility, clean installation on another Mac, and full
+VoiceOver speech output remain unverified. The package is arm64 only and ad-hoc
+signed, without Developer ID signing or notarization. Source-file protection,
+annotation limitations, and framework warning details remain documented below.
+
 All fixtures are synthetic. Tests never read personal PDFs, and generated PDFs
 and build products remain ignored by Git.
 
@@ -12,7 +31,7 @@ bash scripts/test.sh
 bash scripts/test.sh -c release
 ```
 
-The 54 tests cover:
+The 78 native tests cover:
 
 - Exact 75% middle-right Letter placement: 153 pt (2.125 inches) left and
   99 pt (1.375 inches) top/bottom; all nine anchors at 50%, 75%, and 100%.
@@ -29,8 +48,20 @@ The 54 tests cover:
 - Adding PDFKit highlights/ink after export and saving/reopening the result.
 - The completed Quartz cross-reference normalization, including stable content
   bytes and offsets, idempotence, and unsupported-format no-ops.
+- Symmetric edge offsets at all nine anchors in both orientations; zero offsets
+  reproduce the original geometry exactly across mixed source sizes and scales.
+- Nonzero offsets with crops/rotations, unchanged scale, exact fit boundaries,
+  invalid/nonfinite inputs, and multipage text/order/preview/export agreement.
+- Live numeric drafts, decimal locales, page scopes, offscreen-page warnings,
+  export blocking/recovery, source bytes, and metadata-driven version labels.
+- Initial mouse-focus event ordering, delayed field-editor creation, protection
+  of later cursor/text edits, native blur callbacks, blank restoration, dynamic
+  inch limits, exact displayed-boundary acceptance, and scale/orientation changes.
+- Two-decimal formatting on blur/restoration/navigation, strict hundredth input,
+  downward-rounded maxima (including binary floating-point boundaries), and
+  full-precision PDF geometry. Formatting alone preserves per-page overrides.
 
-To retain 19 PDFs per configuration for independent checks, set
+To retain 21 PDFs per configuration for independent checks, set
 `MARGIN_MAKER_TEST_OUTPUT` to a fresh directory for each run:
 
 ```bash
@@ -62,6 +93,35 @@ The font must cover Greek, Cyrillic, and CJK.
 an unexpected failure; status 0 means ActualText also survived. Inspect
 `report.json` to distinguish the known failure from structural and ordinary/OCR
 text checks. Passing qpdf alone does not establish semantic preservation.
+
+## Historical development verification: November 4, 2026
+
+Development build 3 passes all 78 native tests in debug and release. Precision
+regressions confirm that completed fields use two decimals, excess decimal input
+is rejected without being applied, every advertised maximum fits, and the PDF
+engine still accepts full-precision geometry. Hover tooltips are removed while
+native keyboard editing and accessibility labels/help remain available. Live
+Precision QA checks confirm two-decimal defaults/normalization, Tab/Shift-Tab,
+excess-precision and maximum-limit messages, and acceptance of displayed maxima.
+Accessibility metadata was inspected; VoiceOver speech output was not tested.
+
+Development build 2 passes all 75 native tests in both debug and release. Live
+checks in a separately identified QA app cover initial click-to-select on both
+fields, replacing zero with 1, subsequent cursor editing, decimal entry, Tab and
+Shift-Tab, clearing and restoring both fields, out-of-range limits, 50/75/100%
+scales, both output orientations, and mixed/rotated source pages. The running
+build 1 Dev app and its open reading/settings were left intact. See
+[the archived development record](https://github.com/deanlefor/margin-maker/blob/832272a/DEVELOPMENT.md) for build 2 review steps and remaining platform
+limitations.
+
+The initial build 1 offset/version review passed 66 tests in both configurations,
+plus eight Python reference tests. All 42 retained native PDFs pass qpdf. New
+offset exports pass independent pypdf/Poppler text, size, and order checks. The
+existing compatibility tool retains its expected exit 2 for known ActualText
+loss; ordinary multilingual/OCR text passes. The extracted development app's
+footer, numeric controls, fit warnings, page overrides, and save-panel export
+were checked locally. [The archived development record](https://github.com/deanlefor/margin-maker/blob/832272a/DEVELOPMENT.md) records the build, preserved
+release history/artifacts, review steps, and remaining manual tests.
 
 ## Final v0.3.0 verification: November 4, 2026
 

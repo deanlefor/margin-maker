@@ -17,6 +17,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var exportedURL: URL?
     @Published private(set) var pendingOpenURL: URL?
     @Published private(set) var filePanelIsPresented = false
+    @Published private(set) var horizontalOffsetText = "0.00"
+    @Published private(set) var verticalOffsetText = "0.00"
+    private var lastValidOffsets: [OffsetAxis: Double] = [.horizontal: 0, .vertical: 0]
     private var previewTask: Task<Void, Never>?
     private var previewWorker: Task<Data, Error>?
     private var previewRevision = 0
@@ -52,7 +55,10 @@ final class AppModel: ObservableObject {
     }
 
     var canChoosePDF: Bool { !filePanelIsPresented }
-    var canExport: Bool { source != nil && !isBusy && !filePanelIsPresented }
+    var canExport: Bool {
+        source != nil && !isBusy && !filePanelIsPresented && layoutWarning == nil &&
+        OffsetAxis.allCases.allSatisfy { !isBlankOffset($0) }
+    }
     var canGoBack: Bool { (settings?.pageIndex ?? 0) > 0 && !isBusy }
     var canGoForward: Bool {
         guard let settings else { return false }
@@ -61,6 +67,179 @@ final class AppModel: ObservableObject {
     var layout: PageLayout { settings?.current ?? PageLayout() }
     var scope: EditScope { settings?.scope ?? .allPages }
     var pageOrientation: PageOrientation { settings?.orientation ?? .portrait }
+
+    private var offsetInputWarning: String? {
+        for axis in OffsetAxis.allCases where !isBlankOffset(axis) {
+            if Self.offsetValue(offsetText(axis)) == nil {
+                return "\(axis.label) offset: enter a number in \(offsetRangeDescription(axis)) using at most two decimal places (0.01 in increments)."
+            }
+        }
+        return nil
+    }
+
+    private func offsetText(_ axis: OffsetAxis) -> String {
+        axis == .horizontal ? horizontalOffsetText : verticalOffsetText
+    }
+
+    private func isBlankOffset(_ axis: OffsetAxis) -> Bool {
+        offsetText(axis).trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Ask the unchanged placement calculation for the scaled size at zero
+    /// offsets. This keeps displayed limits in agreement with the PDF engine.
+    private func offsetLimits(for size: CGSize, layout: PageLayout, orientation: PageOrientation) throws -> CGSize {
+        var zero = layout
+        zero.horizontalOffsetInches = 0
+        zero.verticalOffsetInches = 0
+        let placed = try zero.placement(for: size, orientation: orientation)
+        let canvas = orientation.pageSize
+        return CGSize(width: max(0, (canvas.width - placed.width) / 144),
+                      height: max(0, (canvas.height - placed.height) / 144))
+    }
+
+    /// An All pages edit applies the current page's scale to every source page.
+    /// Existing overrides remain intact until an adjustment, as before.
+    func maximumOffset(_ axis: OffsetAxis) -> Double? {
+        guard let source, let settings else { return nil }
+        let indices = scope == .allPages ? Array(settings.pages.indices) : [settings.pageIndex]
+        return indices.compactMap { index -> Double? in
+            guard let limits = try? offsetLimits(for: source.visiblePageSizes[index], layout: layout,
+                                                 orientation: settings.orientation) else { return nil }
+            return axis == .horizontal ? limits.width : limits.height
+        }.min()
+    }
+
+    static func maximumInHundredths(_ limit: Double) -> Double {
+        guard limit.isFinite, limit >= 0 else { return 0 }
+        var cents = (limit * 100).rounded(.down)
+        // Correct binary multiplication/division at exact cent boundaries,
+        // without ever advertising a value above the full-precision limit.
+        if (cents + 1) / 100 <= limit { cents += 1 }
+        if cents / 100 > limit { cents -= 1 }
+        return max(0, cents) / 100
+    }
+
+    func maximumInputOffset(_ axis: OffsetAxis) -> Double? {
+        maximumOffset(axis).map(Self.maximumInHundredths)
+    }
+
+    static func limitText(_ limit: Double) -> String {
+        offsetText(maximumInHundredths(limit))
+    }
+
+    func offsetRangeDescription(_ axis: OffsetAxis) -> String {
+        maximumOffset(axis).map { "0.00–\(Self.limitText($0)) in" } ?? "nonnegative inches (0.01 in increments)"
+    }
+
+    /// Check every page, including overrides away from the current preview.
+    var layoutWarning: String? {
+        if let offsetInputWarning { return offsetInputWarning }
+        guard let source, let settings else { return nil }
+        for index in settings.pages.indices {
+            if let warning = placementWarning(at: index, source: source, settings: settings) {
+                return "Page \(index + 1): \(warning)"
+            }
+        }
+        return nil
+    }
+
+    var previewWarning: String? {
+        if let offsetInputWarning { return offsetInputWarning }
+        guard let source, let settings else { return nil }
+        return placementWarning(at: settings.pageIndex, source: source, settings: settings)
+    }
+
+    private func placementWarning(at index: Int, source: PDFSource, settings: DocumentLayout) -> String? {
+        do {
+            let page = settings.pages[index]
+            let limits = try offsetLimits(for: source.visiblePageSizes[index], layout: page,
+                                          orientation: settings.orientation)
+            let problems = OffsetAxis.allCases.compactMap { axis -> String? in
+                let maximum = axis == .horizontal ? limits.width : limits.height
+                guard axis.value(in: page) > Self.maximumInHundredths(maximum) else { return nil }
+                return "\(axis.label) offset allows 0.00–\(Self.limitText(maximum)) in"
+            }
+            if !problems.isEmpty {
+                return problems.joined(separator: "; ") + " at \(page.scalePercent)% with \(settings.orientation.rawValue.lowercased()) output. Reduce the offset or choose a smaller scale. Scaling has not changed."
+            }
+            _ = try page.placement(for: source.visiblePageSizes[index], orientation: settings.orientation)
+            return nil
+        } catch { return error.localizedDescription }
+    }
+
+    static func offsetValue(_ text: String, locale: Locale = .current) -> Double? {
+        let normalized = text.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: locale.decimalSeparator ?? ".", with: ".")
+        guard normalized.range(of: #"^(?:[0-9]+(?:\.[0-9]{0,2})?|\.[0-9]{1,2})$"#,
+                               options: .regularExpression) != nil,
+              let value = Double(normalized), value.isFinite, value >= 0 else { return nil }
+        return value
+    }
+
+    func setHorizontalOffsetText(_ text: String) {
+        guard source != nil, !isBusy else { return }
+        horizontalOffsetText = text
+        applyOffsetInputs()
+    }
+
+    func setVerticalOffsetText(_ text: String) {
+        guard source != nil, !isBusy else { return }
+        verticalOffsetText = text
+        applyOffsetInputs()
+    }
+
+    private func applyOffsetInputs() {
+        exportedURL = nil
+        for axis in OffsetAxis.allCases {
+            if let value = Self.offsetValue(offsetText(axis)), let maximum = maximumInputOffset(axis), value <= maximum {
+                lastValidOffsets[axis] = value
+            }
+        }
+        // Blank is an unfinished edit, not an invalid number. Preview the last
+        // accepted value until blur restores its text; export waits for completion.
+        let horizontal = isBlankOffset(.horizontal) ? restoredOffset(.horizontal) : Self.offsetValue(horizontalOffsetText)
+        let vertical = isBlankOffset(.vertical) ? restoredOffset(.vertical) : Self.offsetValue(verticalOffsetText)
+        guard let horizontal, let vertical else {
+            refreshPreview()
+            return
+        }
+        var updated = layout
+        updated.horizontalOffsetInches = horizontal
+        updated.verticalOffsetInches = vertical
+        apply(updated)
+    }
+
+    private func restoredOffset(_ axis: OffsetAxis) -> Double {
+        let previous = lastValidOffsets[axis] ?? 0
+        return previous <= (maximumInputOffset(axis) ?? 0) ? previous : 0
+    }
+
+    func finishEditingOffset(_ axis: OffsetAxis) {
+        let wasBlank = isBlankOffset(axis)
+        let value = wasBlank ? restoredOffset(axis) : Self.offsetValue(offsetText(axis))
+        if let value {
+            let text = Self.offsetText(value)
+            if axis == .horizontal { horizontalOffsetText = text }
+            else { verticalOffsetText = text }
+            // Valid edits already updated the layout while typing. Formatting
+            // alone must not apply All pages and erase existing overrides.
+            if wasBlank { applyOffsetInputs() }
+        }
+    }
+
+    private static func offsetText(_ value: Double) -> String {
+        value.formatted(.number.grouping(.never).precision(.fractionLength(2)))
+    }
+
+    private func syncOffsetInputs() {
+        horizontalOffsetText = Self.offsetText(layout.horizontalOffsetInches)
+        verticalOffsetText = Self.offsetText(layout.verticalOffsetInches)
+        for axis in OffsetAxis.allCases {
+            let value = axis.value(in: layout)
+            lastValidOffsets[axis] = value.isFinite && value >= 0 &&
+                value <= (maximumInputOffset(axis) ?? 0) ? value : 0
+        }
+    }
 
     func choosePDF() {
         guard canChoosePDF else { return }
@@ -132,6 +311,7 @@ final class AppModel: ObservableObject {
                 source = loaded
                 sourceURL = url
                 settings = newSettings
+                syncOffsetInputs()
                 exportedURL = nil
                 preview = nil
                 refreshPreview()
@@ -180,12 +360,20 @@ final class AppModel: ObservableObject {
     func navigate(_ delta: Int) {
         guard let settings, !isBusy else { return }
         self.settings?.selectPage(settings.pageIndex + delta)
+        syncOffsetInputs()
         refreshPreview()
     }
 
     private func refreshPreview() {
         previewRevision += 1
         guard let source, let settings else { return }
+        if previewWarning != nil {
+            pendingPreview = nil
+            previewWorker?.cancel()
+            preview = nil
+            previewIsBusy = false
+            return
+        }
         pendingPreview = PreviewRequest(revision: previewRevision, source: source, settings: settings)
         previewIsBusy = true
         previewWorker?.cancel()
